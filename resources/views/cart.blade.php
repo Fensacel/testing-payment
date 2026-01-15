@@ -37,13 +37,26 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @foreach(session('cart') as $id => $details)
-                            @php $subtotal = $details['price'] * $details['quantity']; @endphp
+                            @php 
+                                $price = $details['price'];
+                                $discount = $details['discount_percentage'] ?? 0;
+                                if ($discount > 0) {
+                                    $price = $price - ($price * $discount / 100);
+                                }
+                                $subtotal = $price * $details['quantity'];
+                            @endphp
                             
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="py-4 px-4 text-center">
+                                    @php
+                                        $originalTotal = $details['price'] * $details['quantity'];
+                                        $productDiscount = $originalTotal - $subtotal;
+                                    @endphp
                                     <input type="checkbox" checked 
                                            class="item-checkbox w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                                            data-id="{{ $id }}" 
+                                           data-original="{{ $originalTotal }}"
+                                           data-discount="{{ $productDiscount }}"
                                            data-subtotal="{{ $subtotal }}"
                                            onchange="recalculateTotal()">
                                 </td>
@@ -59,11 +72,27 @@
                                 </td>
                                 
                                 <td class="py-4 px-2 text-center text-sm">
-                                    Rp {{ number_format($details['price'], 0, ',', '.') }}
+                                    @if(isset($details['discount_percentage']) && $details['discount_percentage'] > 0)
+                                        <div class="flex flex-col items-center gap-1">
+                                            <span class="text-xs text-red-500 font-bold">-{{ number_format($details['discount_percentage'], 0) }}%</span>
+                                            <span class="text-xs text-gray-400 line-through">Rp {{ number_format($details['price'], 0, ',', '.') }}</span>
+                                            <span class="font-bold text-blue-600">Rp {{ number_format($price, 0, ',', '.') }}</span>
+                                        </div>
+                                    @else
+                                        Rp {{ number_format($details['price'], 0, ',', '.') }}
+                                    @endif
                                 </td>
                                 
                                 <td class="py-4 px-2 text-center">
-                                    <span class="bg-gray-100 px-3 py-1 rounded font-bold text-sm">{{ $details['quantity'] }}</span>
+                                    <div class="inline-flex items-center bg-gray-100 rounded-lg border border-gray-200">
+                                        <button onclick="updateQuantity('{{ $id }}', -1)" class="w-8 h-8 hover:bg-gray-200 transition flex items-center justify-center font-bold text-gray-600">
+                                            -
+                                        </button>
+                                        <span class="px-3 py-1 font-bold text-sm min-w-[40px] text-center" id="qty-{{ $id }}">{{ $details['quantity'] }}</span>
+                                        <button onclick="updateQuantity('{{ $id }}', 1)" class="w-8 h-8 hover:bg-gray-200 transition flex items-center justify-center font-bold text-gray-600">
+                                            +
+                                        </button>
+                                    </div>
                                 </td>
                                 
                                 <td class="py-4 px-2 text-center font-bold text-blue-600 hidden sm:table-cell">
@@ -94,10 +123,87 @@
                         <span>Item Dipilih</span>
                         <span id="selected-count">0 barang</span>
                     </div>
+
+                    @php
+                        $totalBeforeDiscount = 0;
+                        $totalDiscount = 0;
+                        foreach(session('cart', []) as $id => $details) {
+                            $originalPrice = $details['price'] * $details['quantity'];
+                            $totalBeforeDiscount += $originalPrice;
+                            
+                            if (isset($details['discount_percentage']) && $details['discount_percentage'] > 0) {
+                                $discountAmount = $originalPrice * ($details['discount_percentage'] / 100);
+                                $totalDiscount += $discountAmount;
+                            }
+                        }
+                        $grandTotal = $totalBeforeDiscount - $totalDiscount;
+                    @endphp
+
+                    <div class="flex justify-between mb-2 text-gray-600 text-sm">
+                        <span>Subtotal</span>
+                        <span id="subtotal-display">Rp {{ number_format($totalBeforeDiscount, 0, ',', '.') }}</span>
+                    </div>
+
+                    <div class="flex justify-between mb-2 text-green-600 font-medium text-sm" id="product-discount-row" style="display: {{ $totalDiscount > 0 ? 'flex' : 'none' }}">
+                        <span>Diskon Produk</span>
+                        <span id="product-discount-display">- Rp {{ number_format($totalDiscount, 0, ',', '.') }}</span>
+                    </div>
                     
-                    <div class="flex justify-between mb-6 text-xl font-bold text-gray-800">
+                    @if(session('promo_code'))
+                    <div class="flex justify-between mb-2 text-green-600 font-medium text-sm" id="promo-discount-row">
+                        <span>Diskon Promo</span>
+                        <span id="promo-discount-display">- Rp 0</span>
+                    </div>
+                    <input type="hidden" id="promo-data" 
+                           data-type="{{ session('promo_code')['discount_type'] }}" 
+                           data-value="{{ session('promo_code')['discount_value'] }}">
+                    @endif
+                    
+                    <div class="flex justify-between mb-6 text-xl font-bold text-gray-800 border-t pt-3 mt-3">
                         <span>Total Bayar</span>
-                        <span id="grand-total" class="text-blue-600">Rp 0</span>
+                        <span id="grand-total" class="text-blue-600">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
+                    </div>
+                    
+                    <!-- Promo Code Section -->
+                    <div class="border-t pt-4 mb-4">
+                        @if(session('promo_code'))
+                            @php $promo = session('promo_code'); @endphp
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm font-bold text-green-700">{{ $promo['code'] }}</p>
+                                        <p class="text-xs text-green-600">
+                                            Diskon: 
+                                            @if($promo['discount_type'] === 'percentage')
+                                                {{ $promo['discount_value'] }}%
+                                            @else
+                                                Rp {{ number_format($promo['discount_value'], 0, ',', '.') }}
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <form action="{{ route('cart.removePromo') }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="text-red-500 hover:text-red-700 text-sm">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @else
+                            <form action="{{ route('cart.applyPromo') }}" method="POST" class="mb-3">
+                                @csrf
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Punya Kode Promo?</label>
+                                <div class="flex gap-2">
+                                    <input type="text" name="promo_code" 
+                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase" 
+                                           placeholder="Masukkan kode promo"
+                                           maxlength="50">
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                                        Pakai
+                                    </button>
+                                </div>
+                            </form>
+                        @endif
                     </div>
                     
                     <form action="{{ route('cart.checkout') }}" method="POST" id="checkout-form">
@@ -133,27 +239,74 @@
         return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
     }
 
-    // 2. Fungsi Hitung Ulang Total
+    // 2. Fungsi Hitung Ulang Total - COMPREHENSIVE VERSION
     function recalculateTotal() {
-        let total = 0;
-        let count = 0;
         const checkboxes = document.querySelectorAll('.item-checkbox');
         const selectAllBox = document.getElementById('select-all');
         let allChecked = true;
-
+        let count = 0;
+        
+        // Calculate totals for checked items only
+        let subtotalBeforeDiscount = 0;
+        let totalProductDiscount = 0;
+        
         checkboxes.forEach(box => {
             if (box.checked) {
-                total += parseInt(box.getAttribute('data-subtotal'));
+                const original = parseFloat(box.getAttribute('data-original'));
+                const discount = parseFloat(box.getAttribute('data-discount'));
+                
+                subtotalBeforeDiscount += original;
+                totalProductDiscount += discount;
                 count++;
             } else {
                 allChecked = false;
             }
         });
-
+        
+        // Update select all checkbox
         if(selectAllBox) selectAllBox.checked = allChecked;
-
-        document.getElementById('grand-total').innerText = formatRupiah(total);
+        
+        // Calculate subtotal after product discount
+        const subtotalAfterProductDiscount = subtotalBeforeDiscount - totalProductDiscount;
+        
+        // Get promo discount (if exists)
+        let promoDiscount = 0;
+        const promoData = document.getElementById('promo-data');
+        if (promoData) {
+            const promoType = promoData.getAttribute('data-type');
+            const promoValue = parseFloat(promoData.getAttribute('data-value'));
+            
+            if (promoType === 'percentage') {
+                promoDiscount = subtotalAfterProductDiscount * (promoValue / 100);
+            } else {
+                promoDiscount = Math.min(promoValue, subtotalAfterProductDiscount);
+            }
+        }
+        
+        // Calculate grand total
+        const grandTotal = subtotalAfterProductDiscount - promoDiscount;
+        
+        // Update display
         document.getElementById('selected-count').innerText = count + " barang";
+        document.getElementById('subtotal-display').innerText = formatRupiah(subtotalBeforeDiscount);
+        
+        const productDiscountRow = document.getElementById('product-discount-row');
+        if (totalProductDiscount > 0) {
+            productDiscountRow.style.display = 'flex';
+            document.getElementById('product-discount-display').innerText = '- ' + formatRupiah(totalProductDiscount);
+        } else {
+            productDiscountRow.style.display = 'none';
+        }
+        
+        const promoDiscountRow = document.getElementById('promo-discount-row');
+        if (promoDiscountRow && promoDiscount > 0) {
+            promoDiscountRow.style.display = 'flex';
+            document.getElementById('promo-discount-display').innerText = '- ' + formatRupiah(promoDiscount);
+        } else if (promoDiscountRow) {
+            promoDiscountRow.style.display = 'none';
+        }
+        
+        document.getElementById('grand-total').innerText = formatRupiah(grandTotal);
     }
 
     // 3. Fungsi Select All
@@ -183,6 +336,46 @@
         // Masukkan ke input hidden dan submit form
         document.getElementById('selected-products-input').value = selectedIds.join(',');
         document.getElementById('checkout-form').submit();
+    }
+
+    // 5. UPDATE QUANTITY
+    function updateQuantity(productId, change) {
+        const qtyElement = document.getElementById('qty-' + productId);
+        let currentQty = parseInt(qtyElement.textContent);
+        let newQty = currentQty + change;
+
+        if (newQty < 1) {
+            if (confirm('Hapus produk ini dari keranjang?')) {
+                window.location.href = '/cart/remove?id=' + productId;
+            }
+            return;
+        }
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/cart/update-quantity';
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'id';
+        idInput.value = productId;
+        form.appendChild(idInput);
+        
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'hidden';
+        qtyInput.name = 'quantity';
+        qtyInput.value = newQty;
+        form.appendChild(qtyInput);
+        
+        document.body.appendChild(form);
+        form.submit();
     }
 
     // Jalankan saat load

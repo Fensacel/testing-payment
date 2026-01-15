@@ -23,6 +23,8 @@ class ProductResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Manajemen';
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
@@ -47,6 +49,15 @@ class ProductResource extends Resource
                     ->numeric()
                     ->prefix('Rp') 
                     ->required(),
+
+                Forms\Components\TextInput::make('discount_percentage')
+                    ->label('Diskon')
+                    ->numeric()
+                    ->suffix('%')
+                    ->minValue(0)
+                    ->maxValue(100)
+                    ->default(0)
+                    ->helperText('Masukkan persentase diskon (0-100)'),
 
                 Forms\Components\TextInput::make('stock')
                     ->numeric()
@@ -73,8 +84,27 @@ class ProductResource extends Resource
                     ->sortable(),
                 
                 Tables\Columns\TextColumn::make('price')
+                    ->label('Harga Normal')
                     ->money('IDR')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('discount_percentage')
+                    ->label('Diskon')
+                    ->suffix('%')
+                    ->badge()
+                    ->color(fn ($state) => $state > 0 ? 'success' : 'gray')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('discounted_price')
+                    ->label('Harga Setelah Diskon')
+                    ->money('IDR')
+                    ->getStateUsing(function ($record) {
+                        if ($record->discount_percentage > 0) {
+                            return $record->price - ($record->price * $record->discount_percentage / 100);
+                        }
+                        return $record->price;
+                    })
+                    ->color(fn ($record) => $record->discount_percentage > 0 ? 'success' : null),
 
                 Tables\Columns\TextColumn::make('stock')
                     ->numeric()

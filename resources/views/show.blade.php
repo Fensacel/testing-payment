@@ -1,156 +1,171 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <title>{{ $product->name }} - MyShop</title>
-</head>
-<body class="bg-gray-50 font-sans text-gray-800">
+@extends('layouts.app')
 
-    <nav class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="{{ route('home') }}" class="font-bold text-2xl text-blue-600 tracking-tighter hover:opacity-80 transition">
-                <i class="fas fa-shopping-bag mr-2"></i>MyShop
-            </a>
-            <div class="space-x-4">
-                <a href="{{ route('home') }}" class="text-gray-600 hover:text-blue-600 font-medium">
-                    <i class="fas fa-arrow-left mr-1"></i> Kembali
-                </a>
-            </div>
-        </div>
-    </nav>
+@section('title', $product->name . ' - MyShop')
 
-    <div class="container mx-auto px-4 py-8">
+@section('content')
+<div class="bg-gray-50 min-h-screen py-10">
+    <div class="container mx-auto px-4">
         
-        <div class="text-sm text-gray-500 mb-6">
-            <a href="{{ route('home') }}" class="hover:text-blue-600">Beranda</a> 
-            <span class="mx-2">/</span> 
-            <span class="text-gray-800 font-medium">{{ $product->name }}</span>
-        </div>
+        <nav class="flex text-gray-500 text-sm mb-6 animate-fade-in-down">
+            <a href="{{ route('home') }}" class="hover:text-blue-600 transition">Beranda</a>
+            <span class="mx-2">/</span>
+            <span class="text-gray-800 font-medium truncate max-w-xs">{{ $product->name }}</span>
+        </nav>
 
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2">
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2">
                 
-                <div class="bg-gray-100 flex items-center justify-center p-8 relative">
-                    @if($product->image)
-                        <div class="w-full aspect-square bg-white rounded-xl overflow-hidden shadow-sm">
+                <div class="p-8 bg-gray-50 flex items-center justify-center relative group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50 z-0"></div>
+                    
+                    <div class="relative z-10 w-full max-w-md aspect-square rounded-2xl overflow-hidden shadow-2xl border-4 border-white transform group-hover:scale-105 transition duration-500">
+                        @if($product->image)
                             <img src="{{ \Illuminate\Support\Facades\Storage::url($product->image) }}" 
                                  class="w-full h-full object-cover" 
                                  alt="{{ $product->name }}">
-                        </div>
-                    @else
-                        <div class="w-full aspect-square bg-gray-200 rounded-xl flex items-center justify-center text-gray-400">
-                            <i class="fas fa-image text-6xl"></i>
-                        </div>
-                    @endif
+                        @else
+                            <div class="flex items-center justify-center h-full bg-gray-200 text-gray-400">
+                                <i class="fas fa-image text-6xl"></i>
+                            </div>
+                        @endif
 
-                    @if($product->stock <= 0)
-                        <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                            <span class="bg-red-600 text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg transform -rotate-12 border-2 border-white">
-                                STOK HABIS
-                            </span>
-                        </div>
-                    @endif
+                        @if($product->stock <= 0)
+                            <div class="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+                                <span class="bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg transform rotate-[-10deg] text-xl border-2 border-white">
+                                    STOK HABIS
+                                </span>
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
-                <div class="p-8 md:p-12 flex flex-col justify-center">
+                <div class="p-8 lg:p-12 flex flex-col justify-center">
                     
-                    <div class="mb-4">
-                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                            Official Product
+                    <div class="mb-4 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                            Digital Product
                         </span>
-                        @if($product->stock > 0)
-                            <span class="ml-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                                <i class="fas fa-check-circle mr-1"></i> Tersedia ({{ $product->stock }})
+                        @if($product->discount_percentage > 0)
+                            <span class="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                DISKON -{{ number_format($product->discount_percentage, 0) }}%
                             </span>
                         @endif
                     </div>
 
-                    <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
+                    <h1 class="text-3xl lg:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
                         {{ $product->name }}
                     </h1>
 
-                    <div class="text-4xl font-bold text-blue-600 mb-6">
-                        Rp {{ number_format($product->price, 0, ',', '.') }}
+                    <div class="flex items-baseline gap-4 mb-6 border-b border-gray-100 pb-6">
+                        <div class="flex flex-col">
+                            @if($product->discount_percentage > 0)
+                                @php
+                                    $discountedPrice = $product->price - ($product->price * $product->discount_percentage / 100);
+                                @endphp
+                                <span class="text-lg text-gray-400 line-through">
+                                    Rp {{ number_format($product->price, 0, ',', '.') }}
+                                </span>
+                                <span class="text-4xl font-extrabold text-blue-600">
+                                    Rp {{ number_format($discountedPrice, 0, ',', '.') }}
+                                </span>
+                            @else
+                                <span class="text-4xl font-extrabold text-blue-600">
+                                    Rp {{ number_format($product->price, 0, ',', '.') }}
+                                </span>
+                            @endif
+                        </div>
+                        @if($product->stock > 0)
+                            <span class="text-green-600 font-medium flex items-center bg-green-50 px-3 py-1 rounded-lg text-sm">
+                                <i class="fas fa-check-circle mr-2"></i> Stok Tersedia: {{ $product->stock }}
+                            </span>
+                        @else
+                            <span class="text-red-500 font-medium flex items-center bg-red-50 px-3 py-1 rounded-lg text-sm">
+                                <i class="fas fa-times-circle mr-2"></i> Stok Habis
+                            </span>
+                        @endif
                     </div>
 
-                    <div class="border-t border-gray-100 my-6"></div>
-
-                    <div class="prose max-w-none text-gray-600 mb-8 leading-relaxed">
-                        <h3 class="font-bold text-gray-900 mb-2 text-lg">Deskripsi Produk</h3>
-                        <p>
-                            {!! nl2br(e($product->description)) !!}
+                    <div class="mb-8">
+                        <h3 class="text-sm font-bold text-gray-900 uppercase mb-2">Deskripsi Produk</h3>
+                        <p class="text-gray-600 leading-relaxed text-sm lg:text-base">
+                            {{ $product->description }}
                         </p>
                     </div>
 
-                    <div class="mt-auto">
-                        @if($product->stock > 0)
-                            <form action="{{ route('cart.add', $product->id) }}" method="POST">
-    @csrf
-    
-    <div class="mb-6">
-        <label class="font-bold text-gray-700 block mb-2">Atur Jumlah:</label>
-        <div class="flex items-center gap-4">
-            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden w-fit">
-                <button type="button" onclick="updateQty(-1)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 transition">
-                    <i class="fas fa-minus text-xs"></i>
-                </button>
-                
-                <input type="number" id="quantity_input" name="quantity" value="1" min="1" max="{{ $product->stock }}" 
-                       class="w-16 text-center border-x border-gray-300 py-2 focus:outline-none bg-white" readonly>
-                
-                <button type="button" onclick="updateQty(1)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 transition">
-                    <i class="fas fa-plus text-xs"></i>
-                </button>
-            </div>
-            <span class="text-sm text-gray-500">Stok tersisa: <span class="font-bold text-gray-700">{{ $product->stock }}</span></span>
-        </div>
-    </div>
+                    @if($product->stock > 0)
+                    <form action="{{ route('cart.add', $product->id) }}" method="POST">
+                        @csrf
+                        
+                        <div class="mb-8">
+                            <label class="text-sm font-bold text-gray-900 uppercase mb-3 block">Atur Jumlah</label>
+                            <div class="inline-flex items-center bg-gray-50 rounded-xl border border-gray-200 p-1">
+                                <button type="button" onclick="updateQty(-1)" class="w-10 h-10 rounded-lg bg-white text-gray-600 hover:bg-gray-100 hover:text-blue-600 shadow-sm transition flex items-center justify-center font-bold text-lg">
+                                    -
+                                </button>
+                                <input type="number" id="quantity_input" name="quantity" value="1" min="1" max="{{ $product->stock }}" 
+                                       class="w-16 bg-transparent text-center font-bold text-gray-800 focus:outline-none border-none p-0" readonly>
+                                <button type="button" onclick="updateQty(1)" class="w-10 h-10 rounded-lg bg-white text-gray-600 hover:bg-gray-100 hover:text-blue-600 shadow-sm transition flex items-center justify-center font-bold text-lg">
+                                    +
+                                </button>
+                            </div>
+                        </div>
 
-    <div class="flex flex-col sm:flex-row gap-3">
-        <button type="submit" name="action" value="add_cart" class="flex-1 bg-white border-2 border-blue-600 text-blue-600 py-3 px-6 rounded-xl font-bold text-lg hover:bg-blue-50 transition flex items-center justify-center">
-            <i class="fas fa-cart-plus mr-2"></i> + Keranjang
-        </button>
-
-        <button type="submit" name="action" value="buy_now" class="flex-1 bg-blue-600 border-2 border-blue-600 text-white py-3 px-6 rounded-xl font-bold text-lg hover:bg-blue-700 transition shadow-lg hover:shadow-blue-500/30 flex items-center justify-center">
-            Beli Langsung
-        </button>
-    </div>
-</form>
-                        @else
-                            <button disabled class="w-full bg-gray-300 text-gray-500 py-4 px-6 rounded-xl font-bold text-lg cursor-not-allowed flex items-center justify-center">
-                                <i class="fas fa-ban mr-2"></i> Stok Habis
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button type="submit" name="action" value="add_cart" 
+                                    class="flex-1 py-4 px-6 rounded-xl border-2 border-blue-600 text-blue-600 font-bold hover:bg-blue-50 transition flex items-center justify-center group">
+                                <i class="fas fa-shopping-cart mr-2 group-hover:scale-110 transition-transform"></i> 
+                                + Keranjang
                             </button>
-                        @endif
+
+                            <button type="submit" name="action" value="buy_now" 
+                                    class="flex-1 py-4 px-6 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition flex items-center justify-center transform hover:-translate-y-1">
+                                Beli Sekarang
+                            </button>
+                        </div>
+                    </form>
+                    @else
+                        <button disabled class="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-bold cursor-not-allowed flex items-center justify-center">
+                            Stok Tidak Tersedia
+                        </button>
+                    @endif
+
+                    <div class="mt-8 pt-6 border-t border-gray-100 grid grid-cols-2 gap-4">
+                        <div class="flex items-center gap-3 text-sm text-gray-500">
+                            <i class="fas fa-shield-alt text-green-500 text-xl"></i>
+                            <span>Garansi Layanan</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-sm text-gray-500">
+                            <i class="fas fa-bolt text-yellow-500 text-xl"></i>
+                            <span>Proses Cepat</span>
+                        </div>
                     </div>
 
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <footer class="bg-gray-800 text-gray-300 py-8 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p class="font-semibold text-white">MyShop</p>
-            <p class="text-sm text-gray-400 mt-2">&copy; {{ date('Y') }} Official Store.</p>
-        </div>
-    </footer>
-
-</body>
-</html>
 <script>
     function updateQty(change) {
         let input = document.getElementById('quantity_input');
         let currentQty = parseInt(input.value);
-        let maxStock = parseInt("{{ $product->stock }}"); // Ambil stok dari database
+        let maxStock = parseInt("{{ $product->stock }}");
 
         let newQty = currentQty + change;
 
-        // Validasi: Tidak boleh kurang dari 1 dan tidak boleh lebih dari stok
         if (newQty >= 1 && newQty <= maxStock) {
             input.value = newQty;
         }
     }
 </script>
+
+<style>
+    /* Hilangkan panah spinner di input number */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+</style>
+@endsection

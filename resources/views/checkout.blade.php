@@ -47,15 +47,29 @@
                         <h2 class="text-lg font-bold text-gray-800 mb-4">Item Jasa</h2>
                         @foreach($itemsToBuy as $item)
                         <div class="flex gap-4 mb-4 border-b last:border-0 pb-4 last:pb-0 border-gray-100">
-                            <div class="w-16 h-16 bg-gray-100 rounded-md overflow-hidden border">
+                            <div class="w-16 h-16 bg-gray-100 rounded-md overflow-hidden border relative">
                                 @if($item['image'])
                                     <img src="{{ \Illuminate\Support\Facades\Storage::url($item['image']) }}" class="w-full h-full object-cover">
                                 @endif
+                                @if(isset($item['discount_percentage']) && $item['discount_percentage'] > 0)
+                                    <div class="absolute top-0 right-0 bg-red-500 text-white text-[8px] font-bold px-1 rounded-bl">
+                                        -{{ number_format($item['discount_percentage'], 0) }}%
+                                    </div>
+                                @endif
                             </div>
-                            <div>
+                            <div class="flex-1">
                                 <h3 class="font-bold text-gray-800">{{ $item['name'] }}</h3>
                                 <p class="text-gray-500 text-sm">Qty: {{ $item['quantity'] }}</p>
-                                <p class="font-bold text-blue-600">Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
+                                @if(isset($item['discount_percentage']) && $item['discount_percentage'] > 0)
+                                    @php
+                                        $originalPrice = $item['price'];
+                                        $discountedPrice = $originalPrice - ($originalPrice * $item['discount_percentage'] / 100);
+                                    @endphp
+                                    <p class="text-xs text-gray-400 line-through">Rp {{ number_format($originalPrice, 0, ',', '.') }}</p>
+                                    <p class="font-bold text-blue-600">Rp {{ number_format($discountedPrice, 0, ',', '.') }}</p>
+                                @else
+                                    <p class="font-bold text-blue-600">Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
+                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -67,20 +81,51 @@
                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 sticky top-24">
                         <h2 class="text-lg font-bold text-gray-800 mb-4">Ringkasan Pembayaran</h2>
                         
+                        @php
+                            $subtotalBeforeDiscount = 0;
+                            $totalDiscount = 0;
+                            foreach($itemsToBuy as $item) {
+                                $originalPrice = $item['price'] * $item['quantity'];
+                                $subtotalBeforeDiscount += $originalPrice;
+                                
+                                if (isset($item['discount_percentage']) && $item['discount_percentage'] > 0) {
+                                    $discountAmount = $originalPrice * ($item['discount_percentage'] / 100);
+                                    $totalDiscount += $discountAmount;
+                                }
+                            }
+                            $subtotalAfterDiscount = $subtotalBeforeDiscount - $totalDiscount;
+                            // Subtract promo discount if exists
+                            $subtotalAfterPromo = $subtotalAfterDiscount - (isset($promoDiscount) ? $promoDiscount : 0);
+                            $serviceFee = $subtotalAfterPromo * 0.025; // 2.5% service fee
+                            $finalTotal = $subtotalAfterPromo + $serviceFee;
+                        @endphp
+
                         <div class="space-y-3 text-sm text-gray-600 mb-4">
                             <div class="flex justify-between">
                                 <span>Subtotal Jasa</span>
-                                <span>Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                                <span>Rp {{ number_format($subtotalBeforeDiscount, 0, ',', '.') }}</span>
                             </div>
-                            <div class="flex justify-between text-green-600">
-                                <span>Biaya Layanan</span>
-                                <span>Gratis</span>
+                            @if($totalDiscount > 0)
+                            <div class="flex justify-between text-green-600 font-medium">
+                                <span>Diskon Produk</span>
+                                <span>- Rp {{ number_format($totalDiscount, 0, ',', '.') }}</span>
+                            </div>
+                            @endif
+                            @if(isset($promoDiscount) && $promoDiscount > 0)
+                            <div class="flex justify-between text-green-600 font-medium">
+                                <span>Diskon Promo ({{ $promoCode['code'] }})</span>
+                                <span>- Rp {{ number_format($promoDiscount, 0, ',', '.') }}</span>
+                            </div>
+                            @endif
+                            <div class="flex justify-between">
+                                <span>Biaya Layanan (2.5%)</span>
+                                <span>Rp {{ number_format($serviceFee, 0, ',', '.') }}</span>
                             </div>
                         </div>
 
                         <div class="border-t pt-4 flex justify-between items-center mb-6">
                             <span class="font-bold text-lg text-gray-800">Total Tagihan</span>
-                            <span class="font-bold text-xl text-blue-600">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                            <span class="font-bold text-xl text-blue-600">Rp {{ number_format($finalTotal, 0, ',', '.') }}</span>
                         </div>
 
                         <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
