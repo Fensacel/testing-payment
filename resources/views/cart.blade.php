@@ -12,6 +12,12 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
+
     @if(session('cart') && count(session('cart')) > 0)
         <div class="flex flex-col lg:flex-row gap-8">
             <div class="flex-grow bg-white rounded-xl shadow overflow-hidden">
@@ -37,9 +43,7 @@
                                 <td class="py-4 px-4 text-center">
                                     <input type="checkbox" checked 
                                            class="item-checkbox w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
-                                           data-name="{{ $details['name'] }}"
-                                           data-qty="{{ $details['quantity'] }}"
-                                           data-price="{{ $details['price'] }}"
+                                           data-id="{{ $id }}" 
                                            data-subtotal="{{ $subtotal }}"
                                            onchange="recalculateTotal()">
                                 </td>
@@ -96,12 +100,17 @@
                         <span id="grand-total" class="text-blue-600">Rp 0</span>
                     </div>
                     
-                    <button onclick="checkoutWhatsApp()" class="block w-full bg-green-500 hover:bg-green-600 text-white text-center font-bold py-3 rounded-xl transition shadow-lg mb-3 flex items-center justify-center gap-2">
-                        <i class="fab fa-whatsapp text-xl"></i> Checkout Dipilih
-                    </button>
+                    <form action="{{ route('cart.checkout') }}" method="POST" id="checkout-form">
+                        @csrf
+                        <input type="hidden" name="selected_products" id="selected-products-input">
+                        
+                        <button type="button" onclick="submitCheckout()" class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white text-center font-bold py-3 rounded-xl transition shadow-lg mb-3 flex items-center justify-center gap-2">
+                            <i class="fas fa-credit-card text-xl"></i> Bayar Sekarang
+                        </button>
+                    </form>
                     
                     <p class="text-xs text-gray-400 text-center mt-2">
-                        *Hanya barang yang dicentang yang akan diproses.
+                        *Hanya barang yang dicentang yang akan diproses pembayaran.
                     </p>
                 </div>
             </div>
@@ -124,7 +133,7 @@
         return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
     }
 
-    // 2. Fungsi Hitung Ulang Total (Dijalankan saat checkbox diklik)
+    // 2. Fungsi Hitung Ulang Total
     function recalculateTotal() {
         let total = 0;
         let count = 0;
@@ -134,7 +143,6 @@
 
         checkboxes.forEach(box => {
             if (box.checked) {
-                // Ambil subtotal dari atribut data-subtotal
                 total += parseInt(box.getAttribute('data-subtotal'));
                 count++;
             } else {
@@ -142,15 +150,13 @@
             }
         });
 
-        // Update tampilan Select All jika ada yang tidak dicentang
         if(selectAllBox) selectAllBox.checked = allChecked;
 
-        // Update Teks di HTML
         document.getElementById('grand-total').innerText = formatRupiah(total);
         document.getElementById('selected-count').innerText = count + " barang";
     }
 
-    // 3. Fungsi Select All / Unselect All
+    // 3. Fungsi Select All
     function toggleAll(source) {
         const checkboxes = document.querySelectorAll('.item-checkbox');
         checkboxes.forEach(box => {
@@ -159,8 +165,8 @@
         recalculateTotal();
     }
 
-    // 4. Fungsi Checkout ke WhatsApp
-    function checkoutWhatsApp() {
+    // 4. FUNGSI BARU: Submit ke Laravel (Bukan WA lagi)
+    function submitCheckout() {
         const checkboxes = document.querySelectorAll('.item-checkbox:checked');
         
         if (checkboxes.length === 0) {
@@ -168,29 +174,18 @@
             return;
         }
 
-        let message = "Halo Admin, saya ingin memesan item berikut:\n\n";
-        let total = 0;
-
+        // Kumpulkan ID barang yang dicentang
+        let selectedIds = [];
         checkboxes.forEach(box => {
-            let name = box.getAttribute('data-name');
-            let qty = box.getAttribute('data-qty');
-            let subtotal = parseInt(box.getAttribute('data-subtotal'));
-            
-            message += `- ${name} (x${qty}) \n`;
-            total += subtotal;
+            selectedIds.push(box.getAttribute('data-id'));
         });
 
-        message += `\nTotal Pembayaran: ${formatRupiah(total)}`;
-        message += "\n\nMohon info pembayaran selanjutnya. Terima kasih!";
-
-        // Ganti nomor WA di bawah ini (Format: 628...)
-        const phoneNumber = "6281234567890"; 
-        const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-
-        window.open(url, '_blank');
+        // Masukkan ke input hidden dan submit form
+        document.getElementById('selected-products-input').value = selectedIds.join(',');
+        document.getElementById('checkout-form').submit();
     }
 
-    // Jalankan hitungan pertama kali saat halaman dimuat
+    // Jalankan saat load
     document.addEventListener("DOMContentLoaded", function() {
         recalculateTotal();
     });
