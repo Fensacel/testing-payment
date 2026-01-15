@@ -240,11 +240,36 @@ class CartController extends Controller
                         // Jika stok habis saat mau bayar, batalkan semua
                         return redirect()->route('cart.index')->with('error', 'Stok ' . $cart[$id]['name'] . ' tidak mencukupi. Transaksi dibatalkan.');
                     }
-                    $subtotal += $cart[$id]['price'] * $cart[$id]['quantity'];
+                    
+                    // Calculate price with product discount
+                    $price = $cart[$id]['price'];
+                    if (isset($cart[$id]['discount_percentage']) && $cart[$id]['discount_percentage'] > 0) {
+                        $price = $price - ($price * $cart[$id]['discount_percentage'] / 100);
+                    }
+                    $subtotal += $price * $cart[$id]['quantity'];
                 }
             }
 
-            $grandTotal = $subtotal; 
+            // Get promo code from session
+            $promoCode = session('promo_code');
+            $promoDiscount = 0;
+            $promoCodeId = null;
+            
+            if ($promoCode) {
+                // Calculate promo discount
+                if ($promoCode['discount_type'] === 'percentage') {
+                    $promoDiscount = $subtotal * ($promoCode['discount_value'] / 100);
+                } else {
+                    $promoDiscount = min($promoCode['discount_value'], $subtotal);
+                }
+                $promoCodeId = $promoCode['id'];
+            }
+            
+            // Calculate service fee (2.5%) and grand total
+            $subtotalAfterPromo = $subtotal - $promoDiscount;
+            $serviceFee = $subtotalAfterPromo * 0.025;
+            $grandTotal = $subtotalAfterPromo + $serviceFee;
+            
             $orderNumber = 'ORD-' . strtoupper(Str::random(10));
 
             // Buat Order
@@ -252,6 +277,8 @@ class CartController extends Controller
                 'user_id' => Auth::id(),
                 'order_number' => $orderNumber,
                 'total_price' => $grandTotal,
+                'promo_code_id' => $promoCodeId,
+                'promo_discount' => $promoDiscount,
                 'status' => 'pending',
                 'customer_name' => $request->customer_name,
                 'customer_phone' => $request->customer_phone,
@@ -279,6 +306,13 @@ class CartController extends Controller
                 }
             }
             session()->put('cart', $cart);
+            
+            // Increment promo code usage count if promo was used
+            if ($promoCodeId) {
+                PromoCode::where('id', $promoCodeId)->increment('used_count');
+                // Clear promo from session after successful order
+                session()->forget('promo_code');
+            }
 
             // Midtrans Logic
             Config::$serverKey = env('MIDTRANS_SERVER_KEY');

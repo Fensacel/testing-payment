@@ -149,7 +149,7 @@
                     @endif
                     
                     <div class="mt-6 pt-6 border-t border-gray-100 text-center">
-                        <a href="https://wa.me/6281234567890?text=Halo Admin, saya butuh bantuan untuk Order ID: {{ $order->order_number }}" target="_blank" class="inline-flex items-center text-gray-500 hover:text-green-600 font-medium text-sm transition">
+                        <a href="https://wa.me/6289603166370?text=Halo Admin, saya butuh bantuan untuk Order ID: {{ $order->order_number }}" target="_blank" class="inline-flex items-center text-gray-500 hover:text-green-600 font-medium text-sm transition">
                             <i class="fab fa-whatsapp text-lg mr-2 text-green-500"></i> Butuh Bantuan? Chat Admin
                         </a>
                     </div>
