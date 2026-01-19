@@ -5,7 +5,12 @@
 @section('content')
 <div class="bg-gray-100 min-h-screen py-8">
     <div class="container mx-auto px-4">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Detail Pemesanan Jasa</h1>
+        <!-- Back Button -->
+        <a href="{{ route('cart.index') }}" class="inline-flex items-center text-gray-600 hover:text-black transition mb-4">
+            <i class="fas fa-arrow-left mr-2"></i> Kembali ke Keranjang
+        </a>
+        
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Checkout</h1>
 
         <form action="{{ route('cart.payment') }}" method="POST">
             @csrf
@@ -17,7 +22,7 @@
                     
                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-user-circle text-blue-600 mr-2"></i> Data Pemesan
+                            <i class="fas fa-user-circle text-black mr-2"></i> Data Pemesan
                         </h2>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -38,7 +43,7 @@
 
                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-edit text-blue-600 mr-2"></i> Detail Pesanan / Catatan
+                            <i class="fas fa-edit text-black mr-2"></i> Detail Pesanan / Catatan
                         </h2>
                         <textarea name="note" rows="3" class="w-full border rounded-lg px-4 py-2 focus:ring focus:ring-blue-200" placeholder="Tuliskan detail pesanan Anda, misal: Nama domain yang diinginkan, referensi desain, atau link file materi..."></textarea>
                     </div>
@@ -66,9 +71,9 @@
                                         $discountedPrice = $originalPrice - ($originalPrice * $item['discount_percentage'] / 100);
                                     @endphp
                                     <p class="text-xs text-gray-400 line-through">Rp {{ number_format($originalPrice, 0, ',', '.') }}</p>
-                                    <p class="font-bold text-blue-600">Rp {{ number_format($discountedPrice, 0, ',', '.') }}</p>
+                                    <p class="font-bold text-black">Rp {{ number_format($discountedPrice, 0, ',', '.') }}</p>
                                 @else
-                                    <p class="font-bold text-blue-600">Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
+                                    <p class="font-bold text-black">Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
                                 @endif
                             </div>
                         </div>
@@ -125,10 +130,10 @@
 
                         <div class="border-t pt-4 flex justify-between items-center mb-6">
                             <span class="font-bold text-lg text-gray-800">Total Tagihan</span>
-                            <span class="font-bold text-xl text-blue-600">Rp {{ number_format($finalTotal, 0, ',', '.') }}</span>
+                            <span class="font-bold text-xl text-black">Rp {{ number_format($finalTotal, 0, ',', '.') }}</span>
                         </div>
 
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
+                        <button type="submit" class="w-full bg-black hover:bg-gray-900 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
                             Lanjut Pembayaran <i class="fas fa-arrow-right ml-2"></i>
                         </button>
                     </div>

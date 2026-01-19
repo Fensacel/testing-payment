@@ -22,7 +22,7 @@
             <p class="text-3xl font-extrabold text-indigo-600">Rp {{ number_format($order->total_price, 0, ',', '.') }}</p>
         </div>
 
-        <button id="pay-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:scale-105">
+        <button id="pay-button" class="w-full bg-black hover:bg-gray-900 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:scale-105">
             Bayar Sekarang
         </button>
     </div>

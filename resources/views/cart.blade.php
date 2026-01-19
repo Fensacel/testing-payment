@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
+    <!-- Back Button -->
+    <a href="{{ route('home') }}" class="inline-flex items-center text-gray-600 hover:text-black transition mb-4">
+        <i class="fas fa-arrow-left mr-2"></i> Kembali ke Beranda
+    </a>
+    
     <h1 class="text-2xl font-bold mb-6">Keranjang Belanja</h1>
 
     @if(session('success'))
@@ -26,7 +31,7 @@
                         <tr>
                             <th class="py-4 px-4 w-10 text-center">
                                 <input type="checkbox" id="select-all" checked onclick="toggleAll(this)" 
-                                       class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                                       class="w-5 h-5 text-black rounded border-gray-300 focus:ring-gray-500 cursor-pointer">
                             </th>
                             <th class="text-left py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Produk</th>
                             <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Harga</th>
@@ -53,7 +58,7 @@
                                         $productDiscount = $originalTotal - $subtotal;
                                     @endphp
                                     <input type="checkbox" checked 
-                                           class="item-checkbox w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                                           class="item-checkbox w-5 h-5 text-black rounded border-gray-300 focus:ring-gray-500 cursor-pointer"
                                            data-id="{{ $id }}" 
                                            data-original="{{ $originalTotal }}"
                                            data-discount="{{ $productDiscount }}"
@@ -76,7 +81,7 @@
                                         <div class="flex flex-col items-center gap-1">
                                             <span class="text-xs text-red-500 font-bold">-{{ number_format($details['discount_percentage'], 0) }}%</span>
                                             <span class="text-xs text-gray-400 line-through">Rp {{ number_format($details['price'], 0, ',', '.') }}</span>
-                                            <span class="font-bold text-blue-600">Rp {{ number_format($price, 0, ',', '.') }}</span>
+                                            <span class="font-bold text-black">Rp {{ number_format($price, 0, ',', '.') }}</span>
                                         </div>
                                     @else
                                         Rp {{ number_format($details['price'], 0, ',', '.') }}
@@ -95,7 +100,7 @@
                                     </div>
                                 </td>
                                 
-                                <td class="py-4 px-2 text-center font-bold text-blue-600 hidden sm:table-cell">
+                                <td class="py-4 px-2 text-center font-bold text-black hidden sm:table-cell">
                                     Rp {{ number_format($subtotal, 0, ',', '.') }}
                                 </td>
                                 
@@ -152,42 +157,33 @@
                     @if(session('promo_code'))
                     <div class="flex justify-between mb-2 text-green-600 font-medium text-sm" id="promo-discount-row">
                         <span>Diskon Promo</span>
-                        <span id="promo-discount-display">- Rp 0</span>
+                        <span id="promo-discount-display">- Rp {{ number_format(session('promo_code')['discount_amount'], 0, ',', '.') }}</span>
                     </div>
-                    <input type="hidden" id="promo-data" 
-                           data-type="{{ session('promo_code')['discount_type'] }}" 
-                           data-value="{{ session('promo_code')['discount_value'] }}">
                     @endif
                     
                     <div class="flex justify-between mb-6 text-xl font-bold text-gray-800 border-t pt-3 mt-3">
                         <span>Total Bayar</span>
-                        <span id="grand-total" class="text-blue-600">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
+                        <span id="grand-total" class="text-black">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
                     </div>
                     
                     <!-- Promo Code Section -->
                     <div class="border-t pt-4 mb-4">
                         @if(session('promo_code'))
                             @php $promo = session('promo_code'); @endphp
-                            <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                                <div class="flex justify-between items-center">
+                            <div class="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-tag text-green-600"></i>
                                     <div>
-                                        <p class="text-sm font-bold text-green-700">{{ $promo['code'] }}</p>
-                                        <p class="text-xs text-green-600">
-                                            Diskon: 
-                                            @if($promo['discount_type'] === 'percentage')
-                                                {{ $promo['discount_value'] }}%
-                                            @else
-                                                Rp {{ number_format($promo['discount_value'], 0, ',', '.') }}
-                                            @endif
-                                        </p>
+                                        <p class="font-semibold text-gray-900">{{ $promo['code'] }}</p>
+                                        <p class="text-sm text-gray-600">Diskon Rp {{ number_format($promo['discount_amount'], 0, ',', '.') }}</p>
                                     </div>
-                                    <form action="{{ route('cart.removePromo') }}" method="POST" class="inline">
-                                        @csrf
-                                        <button type="submit" class="text-red-500 hover:text-red-700 text-sm">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </form>
                                 </div>
+                                <form action="{{ route('cart.removePromo') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="text-red-600 hover:text-red-800">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
                             </div>
                         @else
                             <form action="{{ route('cart.applyPromo') }}" method="POST" class="mb-3">
@@ -195,10 +191,10 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Punya Kode Promo?</label>
                                 <div class="flex gap-2">
                                     <input type="text" name="promo_code" 
-                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase" 
+                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-800 uppercase" 
                                            placeholder="Masukkan kode promo"
                                            maxlength="50">
-                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                                    <button type="submit" class="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded-lg font-medium transition">
                                         Pakai
                                     </button>
                                 </div>
@@ -226,7 +222,7 @@
             <i class="fas fa-shopping-cart text-6xl text-gray-200 mb-4"></i>
             <h2 class="text-2xl font-bold text-gray-600 mb-2">Keranjang belanja kosong</h2>
             <p class="text-gray-500 mb-6">Yuk isi dengan barang-barang impianmu!</p>
-            <a href="{{ route('home') }}" class="bg-blue-600 text-white px-6 py-3 rounded-full font-bold hover:bg-blue-700 transition">
+            <a href="{{ route('home') }}" class="bg-black text-white px-6 py-3 rounded-full font-bold hover:bg-gray-900 transition">
                 Mulai Belanja
             </a>
         </div>
@@ -269,18 +265,14 @@
         // Calculate subtotal after product discount
         const subtotalAfterProductDiscount = subtotalBeforeDiscount - totalProductDiscount;
         
-        // Get promo discount (if exists)
+        // Get promo discount from session (already calculated)
         let promoDiscount = 0;
-        const promoData = document.getElementById('promo-data');
-        if (promoData) {
-            const promoType = promoData.getAttribute('data-type');
-            const promoValue = parseFloat(promoData.getAttribute('data-value'));
-            
-            if (promoType === 'percentage') {
-                promoDiscount = subtotalAfterProductDiscount * (promoValue / 100);
-            } else {
-                promoDiscount = Math.min(promoValue, subtotalAfterProductDiscount);
-            }
+        const promoDiscountRow = document.getElementById('promo-discount-row');
+        if (promoDiscountRow) {
+            // Promo discount is already calculated and stored in session
+            // We just need to get it from the display
+            const promoAmount = {{ session('promo_code')['discount_amount'] ?? 0 }};
+            promoDiscount = promoAmount;
         }
         
         // Calculate grand total
@@ -298,7 +290,6 @@
             productDiscountRow.style.display = 'none';
         }
         
-        const promoDiscountRow = document.getElementById('promo-discount-row');
         if (promoDiscountRow && promoDiscount > 0) {
             promoDiscountRow.style.display = 'flex';
             document.getElementById('promo-discount-display').innerText = '- ' + formatRupiah(promoDiscount);

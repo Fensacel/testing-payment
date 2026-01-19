@@ -71,7 +71,7 @@
                         <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
                             <i class="fas fa-shopping-bag text-white text-xl"></i>
                         </div>
-                        <span class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">ShopHub</span>
+                        <span class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">Fachri</span>
                     </div>
                 </div>
 

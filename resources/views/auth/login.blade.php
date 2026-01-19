@@ -9,7 +9,7 @@
                         <div class="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                             <i class="fas fa-shopping-bag text-white text-xl"></i>
                         </div>
-                        <span class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">ShopHub</span>
+                        <span class="text-2xl font-bold bg-gradient-to-r from-gray-900 to-black bg-clip-text text-transparent">Fachri</span>
                     </div>
                 </div>
 
@@ -84,7 +84,7 @@
                     <!-- Submit Button -->
                     <button 
                         type="submit"
-                        class="btn-modern w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-4 rounded-2xl shadow-lg">
+                        class="btn-modern w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-4 rounded-2xl shadow-lg">
                         Sign in
                     </button>
 

@@ -149,10 +149,10 @@ class CartController extends Controller
             if (!$promo->is_active) {
                 return redirect()->back()->with('error', 'Kode promo sudah tidak aktif');
             }
-            if ($promo->used_count >= $promo->max_usage) {
+            if ($promo->used_count >= $promo->max_uses) {
                 return redirect()->back()->with('error', 'Kode promo sudah mencapai batas penggunaan');
             }
-            if ($promo->valid_until && now()->gt($promo->valid_until)) {
+            if ($promo->expires_at && now()->gt(Carbon::parse($promo->expires_at))) {
                 return redirect()->back()->with('error', 'Kode promo sudah kadaluarsa');
             }
             return redirect()->back()->with('error', 'Kode promo tidak dapat digunakan');
@@ -176,8 +176,7 @@ class CartController extends Controller
         session()->put('promo_code', [
             'id' => $promo->id,
             'code' => $promo->code,
-            'discount_type' => $promo->discount_type,
-            'discount_value' => $promo->discount_value,
+            'discount_percentage' => $promo->discount_percentage,
             'discount_amount' => $promoDiscount,
         ]);
 
@@ -244,11 +243,7 @@ class CartController extends Controller
         
         if ($promoCode) {
             // Calculate promo discount based on subtotal
-            if ($promoCode['discount_type'] === 'percentage') {
-                $promoDiscount = $subtotal * ($promoCode['discount_value'] / 100);
-            } else {
-                $promoDiscount = min($promoCode['discount_value'], $subtotal);
-            }
+            $promoDiscount = $subtotal * ($promoCode['discount_percentage'] / 100);
         }
 
         return view('checkout', compact('itemsToBuy', 'subtotal', 'selectedItemIds', 'promoCode', 'promoDiscount'));
@@ -296,20 +291,26 @@ class CartController extends Controller
             $promoDiscount = 0;
             $promoCodeId = null;
             
-            if ($promoCode) {
-                // Calculate promo discount
-                if ($promoCode['discount_type'] === 'percentage') {
-                    $promoDiscount = $subtotal * ($promoCode['discount_value'] / 100);
-                } else {
-                    $promoDiscount = min($promoCode['discount_value'], $subtotal);
-                }
+            \Log::info('Promo Code in Session:', ['promo_code' => $promoCode]);
+            
+            if ($promoCode && isset($promoCode['id']) && isset($promoCode['discount_amount'])) {
+                // Use pre-calculated discount amount from session
+                $promoDiscount = $promoCode['discount_amount'];
                 $promoCodeId = $promoCode['id'];
+                \Log::info('Promo Applied:', ['id' => $promoCodeId, 'discount' => $promoDiscount]);
             }
             
             // Calculate service fee (2.5%) and grand total
             $subtotalAfterPromo = $subtotal - $promoDiscount;
             $serviceFee = $subtotalAfterPromo * 0.025;
             $grandTotal = $subtotalAfterPromo + $serviceFee;
+            
+            \Log::info('Before Order Creation:', [
+                'subtotal' => $subtotal,
+                'promoCodeId' => $promoCodeId,
+                'promoDiscount' => $promoDiscount,
+                'grandTotal' => $grandTotal
+            ]);
             
             $orderNumber = 'ORD-' . strtoupper(Str::random(10));
 

@@ -5,10 +5,11 @@
 @section('content')
 <div class="bg-gray-50 min-h-screen py-8">
     <div class="container mx-auto px-4">
-        <a href="{{ route('history') }}" class="inline-flex items-center text-gray-600 hover:text-blue-600 mb-6 font-medium transition">
-            <i class="fas fa-arrow-left mr-2"></i> Kembali ke Riwayat
+        <!-- Back Button -->
+        <a href="{{ route('history') }}" class="inline-flex items-center text-gray-600 hover:text-black transition mb-4">
+            <i class="fas fa-arrow-left mr-2"></i> Kembali ke Riwayat Pesanan
         </a>
-
+        
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h1 class="text-2xl font-bold text-gray-800">Detail Pesanan</h1>
             
@@ -49,7 +50,7 @@
 
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                        <i class="fas fa-user-circle text-blue-600"></i> Informasi Pemesan
+                        <i class="fas fa-user-circle text-black"></i> Informasi Pemesan
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
@@ -82,7 +83,7 @@
 
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                        <i class="fas fa-box text-blue-600"></i> Rincian Item
+                        <i class="fas fa-box text-black"></i> Rincian Item
                     </h2>
                     
                     <div class="space-y-4">
@@ -100,7 +101,7 @@
                                 <h3 class="font-bold text-gray-800 text-base">{{ $item->product_name }}</h3>
                                 <div class="flex justify-between items-center mt-1">
                                     <p class="text-sm text-gray-500">{{ $item->quantity }} x Rp {{ number_format($item->price, 0, ',', '.') }}</p>
-                                    <p class="font-bold text-blue-600">Rp {{ number_format($item->price * $item->quantity, 0, ',', '.') }}</p>
+                                    <p class="font-bold text-black">Rp {{ number_format($item->price * $item->quantity, 0, ',', '.') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -126,7 +127,7 @@
                         <div class="border-t border-dashed my-2"></div>
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-gray-800 text-lg">Total Tagihan</span>
-                            <span class="font-bold text-xl text-blue-600">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
+                            <span class="font-bold text-xl text-black">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
                         </div>
                     </div>
 
@@ -135,7 +136,7 @@
                             Bayar sebelum: {{ $order->created_at->addDay()->format('d M, H:i') }}
                         </div>
 
-                        <button id="pay-button" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-1">
+                        <button id="pay-button" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-gray-500/30 transition transform hover:-translate-y-1">
                             Bayar Sekarang <i class="fas fa-wallet ml-2"></i>
                         </button>
                     @elseif($order->status == 'success')

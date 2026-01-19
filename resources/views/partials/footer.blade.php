@@ -5,22 +5,19 @@
             
             <div>
                 <a href="{{ route('home') }}" class="flex items-center gap-2 mb-6">
-                    <div class="bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-lg">
-                        <i class="fas fa-shopping-bag text-sm"></i>
-                    </div>
-                    <span class="font-bold text-xl tracking-tight">MyShop</span>
+                    <img src="{{ asset('logo.png') }}" alt="Fachri" class="h-8 w-auto">
                 </a>
                 <p class="text-gray-400 text-sm leading-relaxed mb-6">
                     Platform digital terpercaya untuk mewujudkan ide kreatifmu. Kami menyediakan layanan jasa dan produk digital berkualitas tinggi.
                 </p>
                 <div class="flex gap-4">
-                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-blue-600 hover:text-white transition transform hover:scale-110">
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition transform hover:scale-110">
                         <i class="fab fa-facebook-f"></i>
                     </a>
-                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-pink-600 hover:text-white transition transform hover:scale-110">
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition transform hover:scale-110">
                         <i class="fab fa-instagram"></i>
                     </a>
-                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-blue-400 hover:text-white transition transform hover:scale-110">
+                    <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-gray-700 hover:text-white transition transform hover:scale-110">
                         <i class="fab fa-twitter"></i>
                     </a>
                 </div>
@@ -29,10 +26,10 @@
             <div>
                 <h3 class="font-bold text-lg mb-6">Tautan Cepat</h3>
                 <ul class="space-y-4 text-sm text-gray-400">
-                    <li><a href="{{ route('home') }}" class="hover:text-blue-500 transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i> Beranda</a></li>
-                    <li><a href="{{ route('home') }}#products" class="hover:text-blue-500 transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i> Katalog Produk</a></li>
+                    <li><a href="{{ route('home') }}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i> Beranda</a></li>
+                    <li><a href="{{ route('home') }}#products" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i> Katalog Produk</a></li>
                     @auth
-                        <li><a href="{{ route('history') }}" class="hover:text-blue-500 transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i> Riwayat Pesanan</a></li>
+                        <li><a href="{{ route('history') }}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs"></i> Riwayat Pesanan</a></li>
                     @endauth
                 </ul>
             </div>
@@ -51,15 +48,15 @@
                 <h3 class="font-bold text-lg mb-6">Hubungi Kami</h3>
                 <ul class="space-y-4 text-sm text-gray-400">
                     <li class="flex items-start gap-3">
-                        <i class="fas fa-map-marker-alt text-blue-500 mt-1"></i>
+                        <i class="fas fa-map-marker-alt text-gray-400 mt-1"></i>
                         <span>Slawi, Tegal, Jawa Tengah<br>Indonesia 52411</span>
                     </li>
                     <li class="flex items-center gap-3">
-                        <i class="fas fa-envelope text-blue-500"></i>
-                        <span>support@myshop.id</span>
+                        <i class="fas fa-envelope text-gray-400"></i>
+                        <span>support@fachri.id</span>
                     </li>
                     <li class="flex items-center gap-3">
-                        <i class="fas fa-phone text-blue-500"></i>
+                        <i class="fas fa-phone text-gray-400"></i>
                         <span>+62 812-3456-7890</span>
                     </li>
                 </ul>
@@ -69,7 +66,7 @@
 
         <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <p class="text-gray-500 text-sm">
-                &copy; {{ date('Y') }} <span class="text-white font-bold">MyShop</span>. All rights reserved.
+                &copy; {{ date('Y') }} <span class="text-white font-bold">Fachri</span>. All rights reserved.
             </p>
             <div class="flex gap-6 text-sm text-gray-500">
                 <a href="#" class="hover:text-white transition">Privacy Policy</a>

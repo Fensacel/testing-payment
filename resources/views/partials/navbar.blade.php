@@ -8,10 +8,10 @@
         <div class="flex items-center space-x-4 md:space-x-8">
             
             
-            <a href="{{ route('cart.index') }}" class="relative p-2 text-gray-600 hover:text-blue-600 transition group">
+            <a href="{{ route('cart.index') }}" class="relative p-2 text-gray-600 hover:text-black transition group">
                 <i class="fas fa-shopping-cart text-xl group-hover:scale-110 transition-transform"></i>
                 @if(count((array) session('cart')) > 0)
-                    <span class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-sm border-2 border-white transform translate-x-1 -translate-y-1">
+                    <span class="absolute top-0 right-0 bg-black text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-sm border-2 border-white transform translate-x-1 -translate-y-1">
                         {{ count((array) session('cart')) }}
                     </span>
                 @endif
@@ -24,10 +24,10 @@
                     
                     <button class="flex items-center gap-3 focus:outline-none">
                         <div class="text-right hidden sm:block">
-                            <p class="text-sm font-bold text-gray-700 leading-none group-hover:text-blue-600 transition">{{ Auth::user()->name }}</p>
+                            <p class="text-sm font-bold text-gray-700 leading-none group-hover:text-black transition">{{ Auth::user()->name }}</p>
                             <p class="text-xs text-gray-400 mt-1">Member</p>
                         </div>
-                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition ring-2 ring-transparent group-hover:ring-blue-100">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 group-hover:bg-gray-900 group-hover:text-white transition ring-2 ring-transparent group-hover:ring-gray-200">
                             <i class="fas fa-user"></i>
                         </div>
                     </button>
@@ -40,11 +40,11 @@
                                 <p class="text-xs text-gray-500">{{ Auth::user()->email }}</p>
                             </div>
 
-                            <a href="{{ route('history') }}" class="block px-4 py-3 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition flex items-center gap-3">
+                            <a href="{{ route('history') }}" class="block px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition flex items-center gap-3">
                                 <i class="fas fa-history text-gray-400"></i> Riwayat Pesanan
                             </a>
 
-                            <a href="{{ route('profile.edit') }}" class="block px-4 py-3 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition flex items-center gap-3">
+                            <a href="{{ route('profile.edit') }}" class="block px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition flex items-center gap-3">
                                 <i class="fas fa-cog text-gray-400"></i> Pengaturan Akun
                             </a>
                             
@@ -61,8 +61,8 @@
                 </div>
             @else
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('login') }}" class="px-5 py-2.5 text-sm font-bold text-gray-600 hover:text-blue-600 transition">Masuk</a>
-                    <a href="{{ route('register') }}" class="px-6 py-2.5 text-sm font-bold bg-blue-600 text-white rounded-full shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:scale-105 transition transform">Daftar</a>
+                    <a href="{{ route('login') }}" class="px-5 py-2.5 text-sm font-bold text-gray-600 hover:text-black transition">Masuk</a>
+                    <a href="{{ route('register') }}" class="px-6 py-2.5 text-sm font-bold bg-black text-white rounded-full shadow-lg hover:bg-gray-800 hover:scale-105 transition transform">Daftar</a>
                 </div>
             @endauth
 

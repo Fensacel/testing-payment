@@ -4,12 +4,17 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
+    <!-- Back Button -->
+    <a href="{{ route('home') }}" class="inline-flex items-center text-gray-600 hover:text-black transition mb-4">
+        <i class="fas fa-arrow-left mr-2"></i> Kembali ke Beranda
+    </a>
+    
     <h1 class="text-2xl font-bold mb-6">Riwayat Pesanan Saya</h1>
 
     @if($orders->isEmpty())
         <div class="bg-white p-8 rounded-xl shadow text-center">
             <p class="text-gray-500">Kamu belum pernah memesan jasa apapun.</p>
-            <a href="{{ route('home') }}" class="text-blue-600 font-bold hover:underline mt-2 inline-block">Cari Jasa Sekarang</a>
+            <a href="{{ route('home') }}" class="text-black font-bold hover:underline mt-2 inline-block">Cari Jasa Sekarang</a>
         </div>
     @else
         <div class="space-y-6">
@@ -53,11 +58,11 @@
                 <div class="bg-gray-50 px-6 py-4 border-t flex justify-between items-center">
                     <div>
                         <p class="text-xs text-gray-500">Total Tagihan</p>
-                        <p class="font-bold text-lg text-blue-600">Rp {{ number_format($order->total_price, 0, ',', '.') }}</p>
+                        <p class="font-bold text-lg text-black">Rp {{ number_format($order->total_price, 0, ',', '.') }}</p>
                     </div>
                     
                     <div class="flex gap-3 items-center">
-                        <a href="{{ route('history.detail', $order->id) }}" class="px-4 py-2 text-sm font-bold text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition border border-transparent hover:border-blue-100">
+                        <a href="{{ route('history.detail', $order->id) }}" class="px-4 py-2 text-sm font-bold text-gray-600 hover:text-black hover:bg-blue-50 rounded-lg transition border border-transparent hover:border-blue-100">
                             Lihat Detail
                         </a>
 

@@ -9,12 +9,10 @@ class PromoCode extends Model
 {
     protected $fillable = [
         'code',
-        'discount_type',
-        'discount_value',
-        'max_usage',
+        'discount_percentage',
+        'max_uses',
         'used_count',
-        'valid_from',
-        'valid_until',
+        'expires_at',
         'is_active',
     ];
 
@@ -36,17 +34,13 @@ class PromoCode extends Model
             return false;
         }
 
-        if ($this->used_count >= $this->max_usage) {
+        if ($this->used_count >= $this->max_uses) {
             return false;
         }
 
         $now = now();
         
-        if ($this->valid_from && $now->lt($this->valid_from)) {
-            return false;
-        }
-
-        if ($this->valid_until && $now->gt($this->valid_until)) {
+        if ($this->expires_at && $now->gt(\Carbon\Carbon::parse($this->expires_at))) {
             return false;
         }
 
@@ -56,11 +50,6 @@ class PromoCode extends Model
     // Calculate discount amount
     public function calculateDiscount(float $subtotal): float
     {
-        if ($this->discount_type === 'percentage') {
-            return $subtotal * ($this->discount_value / 100);
-        }
-
-        // Fixed discount, but not more than subtotal
-        return min($this->discount_value, $subtotal);
+        return $subtotal * ($this->discount_percentage / 100);
     }
 }

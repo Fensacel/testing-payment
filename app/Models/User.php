@@ -65,6 +65,14 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->role === 'admin';
     }
+    
+    /**
+     * Get the orders for the user.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 
     /**
      * Check if the user is a regular user.

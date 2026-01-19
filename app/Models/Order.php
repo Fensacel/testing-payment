@@ -17,6 +17,8 @@ class Order extends Model
         'email',
         'note',
         'snap_token',
+        'promo_code_id',
+        'promo_discount',
     ];
 
     public function items(): HasMany

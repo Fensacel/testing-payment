@@ -3,16 +3,14 @@
 @section('title', $product->name . ' - MyShop')
 
 @section('content')
-<div class="bg-gray-50 min-h-screen py-10">
+<div class="bg-gray-50 min-h-screen py-8">
     <div class="container mx-auto px-4">
+        <!-- Back Button -->
+        <a href="{{ route('home') }}" class="inline-flex items-center text-gray-600 hover:text-black transition mb-4">
+            <i class="fas fa-arrow-left mr-2"></i> Kembali ke Beranda
+        </a>
         
-        <nav class="flex text-gray-500 text-sm mb-6 animate-fade-in-down">
-            <a href="{{ route('home') }}" class="hover:text-blue-600 transition">Beranda</a>
-            <span class="mx-2">/</span>
-            <span class="text-gray-800 font-medium truncate max-w-xs">{{ $product->name }}</span>
-        </nav>
-
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2">
                 
                 <div class="p-8 bg-gray-50 flex items-center justify-center relative group">
@@ -65,11 +63,11 @@
                                 <span class="text-lg text-gray-400 line-through">
                                     Rp {{ number_format($product->price, 0, ',', '.') }}
                                 </span>
-                                <span class="text-4xl font-extrabold text-blue-600">
+                                <span class="text-4xl font-extrabold text-black">
                                     Rp {{ number_format($discountedPrice, 0, ',', '.') }}
                                 </span>
                             @else
-                                <span class="text-4xl font-extrabold text-blue-600">
+                                <span class="text-4xl font-extrabold text-black">
                                     Rp {{ number_format($product->price, 0, ',', '.') }}
                                 </span>
                             @endif
@@ -99,12 +97,12 @@
                         <div class="mb-8">
                             <label class="text-sm font-bold text-gray-900 uppercase mb-3 block">Atur Jumlah</label>
                             <div class="inline-flex items-center bg-gray-50 rounded-xl border border-gray-200 p-1">
-                                <button type="button" onclick="updateQty(-1)" class="w-10 h-10 rounded-lg bg-white text-gray-600 hover:bg-gray-100 hover:text-blue-600 shadow-sm transition flex items-center justify-center font-bold text-lg">
+                                <button type="button" onclick="updateQty(-1)" class="w-10 h-10 rounded-lg bg-white text-gray-600 hover:bg-gray-100 hover:text-black shadow-sm transition flex items-center justify-center font-bold text-lg">
                                     -
                                 </button>
                                 <input type="number" id="quantity_input" name="quantity" value="1" min="1" max="{{ $product->stock }}" 
                                        class="w-16 bg-transparent text-center font-bold text-gray-800 focus:outline-none border-none p-0" readonly>
-                                <button type="button" onclick="updateQty(1)" class="w-10 h-10 rounded-lg bg-white text-gray-600 hover:bg-gray-100 hover:text-blue-600 shadow-sm transition flex items-center justify-center font-bold text-lg">
+                                <button type="button" onclick="updateQty(1)" class="w-10 h-10 rounded-lg bg-white text-gray-600 hover:bg-gray-100 hover:text-black shadow-sm transition flex items-center justify-center font-bold text-lg">
                                     +
                                 </button>
                             </div>
@@ -112,13 +110,13 @@
 
                         <div class="flex flex-col sm:flex-row gap-4">
                             <button type="submit" name="action" value="add_cart" 
-                                    class="flex-1 py-4 px-6 rounded-xl border-2 border-blue-600 text-blue-600 font-bold hover:bg-blue-50 transition flex items-center justify-center group">
+                                    class="flex-1 py-4 px-6 rounded-xl border-2 border-black text-black font-bold hover:bg-blue-50 transition flex items-center justify-center group">
                                 <i class="fas fa-shopping-cart mr-2 group-hover:scale-110 transition-transform"></i> 
                                 + Keranjang
                             </button>
 
                             <button type="submit" name="action" value="buy_now" 
-                                    class="flex-1 py-4 px-6 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition flex items-center justify-center transform hover:-translate-y-1">
+                                    class="flex-1 py-4 px-6 rounded-xl bg-black text-white font-bold hover:bg-gray-900 shadow-lg shadow-gray-500/30 transition flex items-center justify-center transform hover:-translate-y-1">
                                 Beli Sekarang
                             </button>
                         </div>

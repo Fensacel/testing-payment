@@ -6,19 +6,19 @@
     
     <div class="relative bg-white overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-            <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-            <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-            <div class="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+            <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-gray-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+            <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-gray-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+            <div class="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
         </div>
 
         <div class="container mx-auto px-4 pt-20 pb-24 relative z-10 text-center">
-            <span class="inline-block py-1 px-3 rounded-full bg-blue-50 text-blue-600 text-xs font-bold tracking-wider mb-6 border border-blue-100">
+            <span class="inline-block py-1 px-3 rounded-full bg-gray-100 text-black text-xs font-bold tracking-wider mb-6 border border-gray-200">
                 🚀 TOKO PRODUK & JASA DIGITAL TERPERCAYA
             </span>
             
             <h1 class="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6">
                 Wujudkan Ide Digitalmu <br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Lebih Cepat & Mudah</span>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black">Lebih Cepat & Mudah</span>
             </h1>
             
             <p class="text-lg text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed">
@@ -26,10 +26,10 @@
             </p>
 
             <div class="flex justify-center gap-4">
-                <a href="#products" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:scale-105 transition transform">
+                <a href="#products" class="px-8 py-4 bg-black text-white font-bold rounded-xl shadow-lg hover:bg-gray-800 hover:scale-105 transition transform">
                     Mulai Belanja <i class="fas fa-arrow-right ml-2"></i>
                 </a>
-                <a href="#" class="px-8 py-4 bg-white text-gray-700 font-bold rounded-xl shadow-md border border-gray-200 hover:border-blue-300 hover:text-blue-600 transition">
+                <a href="#" class="px-8 py-4 bg-white text-gray-700 font-bold rounded-xl shadow-md border border-gray-200 hover:border-gray-400 hover:text-black transition">
                     Hubungi Admin
                 </a>
             </div>
@@ -40,7 +40,7 @@
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xl">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-black text-xl">
                         <i class="fas fa-bolt"></i>
                     </div>
                     <div>
@@ -49,7 +49,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-xl">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 text-xl">
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <div>
@@ -58,7 +58,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 text-xl">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 text-xl">
                         <i class="fas fa-headset"></i>
                     </div>
                     <div>
@@ -105,7 +105,7 @@
                             @endif
                             
                             @if($product->stock > 0)
-                                <span class="bg-white/90 backdrop-blur-sm text-blue-600 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                <span class="bg-white/90 backdrop-blur-sm text-black text-xs font-bold px-3 py-1 rounded-full shadow-sm">
                                     Digital Item
                                 </span>
                             @else
@@ -118,7 +118,7 @@
                     
                     <div class="p-5 flex flex-col flex-grow">
                         <div class="mb-3">
-                            <h3 class="font-bold text-lg text-gray-800 leading-snug group-hover:text-blue-600 transition line-clamp-2">
+                            <h3 class="font-bold text-lg text-gray-800 leading-snug group-hover:text-black transition line-clamp-2">
                                 {{ $product->name }}
                             </h3>
                         </div>
@@ -134,12 +134,12 @@
                                     <span class="text-xs text-gray-400 line-through">
                                         Rp {{ number_format($product->price, 0, ',', '.') }}
                                     </span>
-                                    <span class="text-blue-600 font-extrabold text-2xl">
+                                    <span class="text-black font-extrabold text-2xl">
                                         Rp {{ number_format($discountedPrice, 0, ',', '.') }}
                                     </span>
                                 @else
                                     <span class="text-xs text-gray-400 font-medium">Harga Mulai</span>
-                                    <span class="text-blue-600 font-extrabold text-2xl">
+                                    <span class="text-black font-extrabold text-2xl">
                                         Rp {{ number_format($product->price, 0, ',', '.') }}
                                     </span>
                                 @endif
@@ -153,19 +153,19 @@
     </div>
 
     <div class="container mx-auto px-4 pb-20">
-        <div class="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-8 md:p-12 text-center text-white shadow-2xl relative overflow-hidden">
+        <div class="bg-gradient-to-r from-gray-900 to-black rounded-3xl p-8 md:p-12 text-center text-white shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white opacity-10 rounded-full"></div>
             <div class="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 bg-white opacity-10 rounded-full"></div>
 
             <h2 class="text-3xl md:text-4xl font-bold mb-4 relative z-10">Siap Mengembangkan Bisnismu?</h2>
-            <p class="text-blue-100 text-lg mb-8 max-w-2xl mx-auto relative z-10">Bergabunglah dengan ribuan pelanggan yang telah mempercayakan kebutuhan digitalnya kepada kami.</p>
+            <p class="text-gray-300 text-lg mb-8 max-w-2xl mx-auto relative z-10">Bergabunglah dengan ribuan pelanggan yang telah mempercayakan kebutuhan digitalnya kepada kami.</p>
             
             @auth
-                <a href="{{ route('history') }}" class="inline-block bg-white text-blue-600 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition relative z-10">
+                <a href="{{ route('history') }}" class="inline-block bg-white text-black font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition relative z-10">
                     Cek Pesanan Saya
                 </a>
             @else
-                <a href="{{ route('register') }}" class="inline-block bg-white text-blue-600 font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition relative z-10">
+                <a href="{{ route('register') }}" class="inline-block bg-white text-black font-bold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition relative z-10">
                     Daftar Akun Gratis
                 </a>
             @endauth
