@@ -227,6 +227,64 @@
             </a>
         </div>
     @endif
+    
+    <!-- Recommended Products Section -->
+    @if(isset($recommendedProducts) && $recommendedProducts->count() > 0)
+    <div class="mt-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Rekomendasi Produk Lainnya</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            @foreach($recommendedProducts as $product)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
+                <a href="{{ route('product.detail', $product->slug) }}" class="block">
+                    <div class="aspect-square bg-gray-100 overflow-hidden relative">
+                        @if($product->image)
+                            <img src="{{ \Illuminate\Support\Facades\Storage::url($product->image) }}" 
+                                 class="w-full h-full object-cover group-hover:scale-105 transition duration-300" 
+                                 alt="{{ $product->name }}">
+                        @else
+                            <div class="flex items-center justify-center h-full text-gray-400">
+                                <i class="fas fa-image text-4xl"></i>
+                            </div>
+                        @endif
+                        @if($product->discount_percentage > 0)
+                            <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                -{{ number_format($product->discount_percentage, 0) }}%
+                            </div>
+                        @endif
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-black transition">
+                            {{ $product->name }}
+                        </h3>
+                        <div class="flex items-baseline gap-2">
+                            @if($product->discount_percentage > 0)
+                                @php
+                                    $discountedPrice = $product->price - ($product->price * $product->discount_percentage / 100);
+                                @endphp
+                                <span class="text-sm text-gray-400 line-through">
+                                    Rp {{ number_format($product->price, 0, ',', '.') }}
+                                </span>
+                                <span class="text-lg font-bold text-black">
+                                    Rp {{ number_format($discountedPrice, 0, ',', '.') }}
+                                </span>
+                            @else
+                                <span class="text-lg font-bold text-black">
+                                    Rp {{ number_format($product->price, 0, ',', '.') }}
+                                </span>
+                            @endif
+                        </div>
+                        <div class="mt-3">
+                            <span class="text-xs text-gray-500">
+                                <i class="fas fa-box mr-1"></i> Stok: {{ $product->stock }}
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 </div>
 
 <script>

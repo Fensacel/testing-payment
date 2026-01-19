@@ -51,8 +51,15 @@ class CartController extends Controller
         
         // Update session with synced data
         session()->put('cart', $syncedCart);
+        
+        // Get recommended products (random 4 products that are active and in stock)
+        $recommendedProducts = Product::where('is_active', true)
+            ->where('stock', '>', 0)
+            ->inRandomOrder()
+            ->take(4)
+            ->get();
 
-        return view('cart', compact('syncedCart', 'total'));
+        return view('cart', compact('syncedCart', 'total', 'recommendedProducts'));
     }
 
     // 2. Menambah Barang ke Keranjang
@@ -443,7 +450,7 @@ class CartController extends Controller
     {
         $order = Order::where('id', $id)
                       ->where('user_id', Auth::id())
-                      ->with(['items.product'])
+                      ->with(['items.product', 'promoCode'])
                       ->firstOrFail();
 
         return view('history-detail', compact('order'));

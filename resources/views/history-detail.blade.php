@@ -120,6 +120,22 @@
                             <span>Subtotal Produk</span>
                             <span class="font-medium">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
                         </div>
+                        
+                        @if($order->promo_code_id && $order->promoCode)
+                        <div class="flex justify-between bg-green-50 -mx-2 px-2 py-2 rounded">
+                            <div>
+                                <span class="text-gray-600">Kode Promo</span>
+                                <p class="text-xs font-mono font-bold text-green-700">{{ $order->promoCode->code }}</p>
+                            </div>
+                            <span class="font-medium text-green-600">- Rp {{ number_format($order->promo_discount, 0, ',', '.') }}</span>
+                        </div>
+                        @elseif($order->promo_discount > 0)
+                        <div class="flex justify-between text-green-600">
+                            <span>Diskon Promo</span>
+                            <span class="font-medium">- Rp {{ number_format($order->promo_discount, 0, ',', '.') }}</span>
+                        </div>
+                        @endif
+                        
                         <div class="flex justify-between text-green-600">
                             <span>Biaya Layanan</span>
                             <span class="font-medium">Gratis</span>
