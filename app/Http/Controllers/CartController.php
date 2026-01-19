@@ -21,12 +21,38 @@ class CartController extends Controller
     {
         $cart = session()->get('cart', []);
         
+        // Sync cart with latest product data from database
+        $syncedCart = [];
         $total = 0;
+        
         foreach($cart as $id => $details) {
-            $total += $details['price'] * $details['quantity'];
+            $product = Product::find($id);
+            
+            // If product still exists, use latest data
+            if ($product) {
+                $syncedCart[$id] = [
+                    'name' => $product->name,
+                    'quantity' => min($details['quantity'], $product->stock), // Ensure quantity doesn't exceed stock
+                    'price' => $product->price,
+                    'discount_percentage' => $product->discount_percentage,
+                    'image' => $product->image,
+                    'stock' => $product->stock
+                ];
+                
+                // Calculate price with discount
+                $price = $product->price;
+                if ($product->discount_percentage > 0) {
+                    $price = $price - ($price * $product->discount_percentage / 100);
+                }
+                $total += $price * $syncedCart[$id]['quantity'];
+            }
+            // If product deleted, remove from cart
         }
+        
+        // Update session with synced data
+        session()->put('cart', $syncedCart);
 
-        return view('cart', compact('cart', 'total'));
+        return view('cart', compact('syncedCart', 'total'));
     }
 
     // 2. Menambah Barang ke Keranjang
@@ -180,14 +206,29 @@ class CartController extends Controller
 
         foreach ($selectedItemIds as $id) {
             if (isset($cart[$id])) {
-                $item = $cart[$id];
-                $item['id'] = $id;
+                // Fetch latest product data from database
+                $product = Product::find($id);
+                
+                if (!$product) {
+                    continue; // Skip if product deleted
+                }
+                
+                // Use latest data from database
+                $item = [
+                    'id' => $id,
+                    'name' => $product->name,
+                    'quantity' => min($cart[$id]['quantity'], $product->stock),
+                    'price' => $product->price,
+                    'discount_percentage' => $product->discount_percentage,
+                    'image' => $product->image
+                ];
+                
                 $itemsToBuy[] = $item;
                 
-                // Calculate price with discount
-                $price = $item['price'];
-                if (isset($item['discount_percentage']) && $item['discount_percentage'] > 0) {
-                    $price = $price - ($price * $item['discount_percentage'] / 100);
+                // Calculate price with latest discount
+                $price = $product->price;
+                if ($product->discount_percentage > 0) {
+                    $price = $price - ($price * $product->discount_percentage / 100);
                 }
                 $subtotal += $price * $item['quantity'];
             }

@@ -113,13 +113,13 @@ class ProductResource extends Resource
                 Tables\Columns\ToggleColumn::make('is_active'),
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                // Action dikosongkan agar tidak error
+                // Actions handled by page-level actions in EditProduct
             ])
             ->bulkActions([
-                // Bulk Action dikosongkan TOTAL agar tidak error
+                // Bulk actions removed for compatibility
             ]);
     }
 

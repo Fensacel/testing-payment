@@ -32,6 +32,9 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->authGuard('web')
+            ->brandName('Fachri')
+            ->favicon(asset('logo.png'))
             ->colors([
                 'primary' => Color::Amber,
             ])

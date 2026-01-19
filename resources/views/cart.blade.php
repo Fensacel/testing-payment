@@ -36,7 +36,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
-                        @foreach(session('cart') as $id => $details)
+                        @foreach($syncedCart as $id => $details)
                             @php 
                                 $price = $details['price'];
                                 $discount = $details['discount_percentage'] ?? 0;
@@ -127,7 +127,7 @@
                     @php
                         $totalBeforeDiscount = 0;
                         $totalDiscount = 0;
-                        foreach(session('cart', []) as $id => $details) {
+                        foreach($syncedCart as $id => $details) {
                             $originalPrice = $details['price'] * $details['quantity'];
                             $totalBeforeDiscount += $originalPrice;
                             

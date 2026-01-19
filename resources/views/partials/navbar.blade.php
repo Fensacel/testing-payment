@@ -2,12 +2,7 @@
     <div class="container mx-auto px-4 py-4 flex justify-between items-center">
         
         <a href="{{ route('home') }}" class="flex items-center gap-2 group">
-            <div class="bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-xl shadow-lg shadow-blue-500/30 transform group-hover:rotate-12 transition duration-300">
-                <i class="fas fa-shopping-bag text-lg"></i>
-            </div>
-            <span class="font-extrabold text-2xl text-gray-800 tracking-tight group-hover:text-blue-600 transition">
-                MyShop
-            </span>
+            <img src="{{ asset('logo.png') }}" alt="Fachri" class="h-12 w-auto transform group-hover:scale-110 transition duration-300">
         </a>
 
         <div class="flex items-center space-x-4 md:space-x-8">
