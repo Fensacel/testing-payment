@@ -29,7 +29,11 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|max:20480',
+            'packages' => 'nullable|array',
+            'packages.*.name' => 'required_with:packages|string',
+            'packages.*.price' => 'nullable|numeric|min:0',
+            'packages.*.description' => 'nullable|string',
         ]);
         
         $validated['slug'] = Str::slug($validated['name']);
@@ -38,7 +42,19 @@ class ProductController extends Controller
             $validated['image'] = $request->file('image')->store('products', 'public');
         }
         
-        Product::create($validated);
+        $product = Product::create($validated);
+
+        if ($request->has('packages')) {
+            foreach ($request->packages as $pkg) {
+                if (!empty($pkg['name'])) { // Only create if name is present
+                    $product->packages()->create([
+                        'name' => $pkg['name'],
+                        'price' => $pkg['price'] ?? 0,
+                        'description' => $pkg['description'] ?? null
+                    ]);
+                }
+            }
+        }
         
         return redirect()->route('admin.products.index')->with('success', 'Product created successfully!');
     }
@@ -56,7 +72,11 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|max:20480',
+            'packages' => 'nullable|array',
+            'packages.*.name' => 'required_with:packages|string',
+            'packages.*.price' => 'nullable|numeric|min:0',
+            'packages.*.description' => 'nullable|string',
         ]);
         
         $validated['slug'] = Str::slug($validated['name']);
@@ -69,6 +89,23 @@ class ProductController extends Controller
         }
         
         $product->update($validated);
+
+        // Sync Packages
+        // Delete all existing packages and re-create them from the request
+        // This handles additions, removals, and updates in a simple way
+        $product->packages()->delete();
+
+        if ($request->has('packages')) {
+            foreach ($request->packages as $pkg) {
+                if (!empty($pkg['name'])) {
+                    $product->packages()->create([
+                        'name' => $pkg['name'],
+                        'price' => $pkg['price'] ?? 0,
+                        'description' => $pkg['description'] ?? null
+                    ]);
+                }
+            }
+        }
         
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully!');
     }

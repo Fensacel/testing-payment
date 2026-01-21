@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\HomeController; // Import Controller Toko
 use App\Http\Controllers\CartController; // Import Controller Keranjang
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\SocialAuthController;
 
 // --- 1. HALAMAN PUBLIK (Bisa diakses siapa saja) ---
 
@@ -18,6 +19,7 @@ Route::get('cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/add/{id}', [CartController::class, 'addToCart'])->name('cart.add');
 Route::delete('cart/remove', [CartController::class, 'remove'])->name('cart.remove');
 Route::post('cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
+Route::post('cart/update-package', [CartController::class, 'updatePackage'])->name('cart.updatePackage');
 Route::post('cart/apply-promo', [CartController::class, 'applyPromo'])->name('cart.applyPromo');
 Route::post('cart/remove-promo', [CartController::class, 'removePromo'])->name('cart.removePromo');
 
@@ -25,6 +27,11 @@ Route::post('cart/remove-promo', [CartController::class, 'removePromo'])->name('
 Route::get('checkout', function() {
     return redirect()->route('cart.index')->with('error', 'Silakan pilih barang dulu.');
 });
+
+// --- OAuth Social Login ---
+Route::get('/oauth/{provider}', [SocialAuthController::class, 'redirect'])->name('oauth.redirect');
+Route::get('/oauth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('oauth.callback');
+Route::get('/oauth/{provider}/debug', [SocialAuthController::class, 'debug'])->name('oauth.debug');
 
 
 // --- 2. HALAMAN DASHBOARD USER (Bawaan Breeze) ---
@@ -50,3 +57,18 @@ Route::middleware('auth')->group(function () {
 
 // Import Route Auth (Login, Register, Logout)
 require __DIR__.'/auth.php';
+
+// --- 4. API endpoints (for Next.js frontend) ---
+Route::prefix('api')->group(function () {
+    // Auth
+    Route::post('/auth/register', [\App\Http\Controllers\Api\AuthController::class, 'register']);
+    Route::post('/auth/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/auth/me', [\App\Http\Controllers\Api\AuthController::class, 'me']);
+        Route::post('/auth/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+    });
+
+    // Products
+    Route::get('/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
+    Route::get('/products/{product}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
+});

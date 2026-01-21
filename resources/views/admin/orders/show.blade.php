@@ -37,6 +37,76 @@
                 </div>
             </div>
         </div>
+
+        <!-- PAYMENT METHOD INFO (MOVED HERE) -->
+        @if($order->payment_type && $order->payment_info)
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <p class="text-sm text-gray-500 mb-2">Metode Pembayaran</p>
+                
+                @if(isset($order->payment_info['bank']))
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="fas fa-university text-blue-600"></i>
+                        <span class="font-bold text-gray-900">Bank Transfer - {{ $order->payment_info['bank'] }}</span>
+                    </div>
+                    @if($order->status == 'pending')
+                    <div class="bg-gray-50 px-4 py-3 rounded border border-gray-200 inline-block mt-2">
+                        <div class="flex items-center gap-4">
+                            <span class="font-mono font-bold text-xl text-blue-700 tracking-wider">{{ $order->payment_info['va_number'] }}</span>
+                            <button onclick="navigator.clipboard.writeText('{{ $order->payment_info['va_number'] }}')" class="text-xs text-gray-500 hover:text-blue-600 bg-white border border-gray-300 px-2 py-1 rounded shadow-sm">
+                                <i class="fas fa-copy mr-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    @endif
+                @elseif(isset($order->payment_info['store']))
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="fas fa-store text-blue-600"></i>
+                        <span class="font-bold text-gray-900">{{ $order->payment_info['store'] }}</span>
+                    </div>
+                    @if($order->status == 'pending')
+                    <div class="bg-gray-50 px-4 py-3 rounded border border-gray-200 inline-block mt-2">
+                        <span class="block text-xs text-gray-500 mb-1">Kode Pembayaran:</span>
+                        <span class="font-mono font-bold text-xl text-blue-700 tracking-wider">{{ $order->payment_info['payment_code'] }}</span>
+                    </div>
+                    @endif
+                @elseif(isset($order->payment_info['bill_key']))
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="fas fa-file-invoice text-blue-600"></i>
+                        <span class="font-bold text-gray-900">Mandiri Bill</span>
+                    </div>
+                    @if($order->status == 'pending')
+                    <div class="bg-gray-50 px-4 py-3 rounded border border-gray-200 inline-block mt-2 min-w-[300px]">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-gray-500">Bill Key:</span>
+                            <span class="font-mono font-bold text-gray-900">{{ $order->payment_info['bill_key'] }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-500">Biller Code:</span>
+                            <span class="font-mono font-bold text-gray-900">{{ $order->payment_info['biller_code'] }}</span>
+                        </div>
+                    </div>
+                    @endif
+                @elseif($order->payment_type == 'qris' || $order->payment_type == 'gopay')
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="fas fa-qrcode text-blue-600"></i>
+                        <span class="font-bold text-gray-900">QRIS / GoPay</span>
+                    </div>
+                    @if($order->status == 'pending')
+                        @if(isset($order->payment_info['qr_code_url']) && $order->payment_info['qr_code_url'])
+                            <div class="mt-3">
+                                <p class="text-xs text-gray-500 mb-2">Scan QR Code:</p>
+                                <img src="{{ $order->payment_info['qr_code_url'] }}" class="w-48 h-48 object-contain border rounded bg-white p-2">
+                            </div>
+                        @else
+                            <div class="bg-yellow-50 px-3 py-2 rounded text-yellow-800 text-xs flex gap-2 items-center mt-2 inline-flex">
+                                <i class="fas fa-info-circle"></i>
+                                <span>QR Code belum di-generate user.</span>
+                            </div>
+                        @endif
+                    @endif
+                @endif
+            </div>
+        @endif
     </div>
     
     <!-- Customer Information Card -->
@@ -131,7 +201,7 @@
             @endif
             
             <div class="flex justify-between items-center">
-                <p class="text-gray-600">Biaya Admin (2.5%)</p>
+                <p class="text-gray-600">Biaya Admin (1%)</p>
                 <p class="font-semibold text-gray-900">Rp {{ number_format($adminFee, 0, ',', '.') }}</p>
             </div>
             

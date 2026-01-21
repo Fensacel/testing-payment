@@ -34,6 +34,8 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->authGuard('web')
             ->brandName('Fachri')
+            ->brandLogo(asset('logo.png'))
+            ->brandLogoHeight('2rem')
             ->favicon(asset('logo.png'))
             ->colors([
                 'primary' => Color::Slate,

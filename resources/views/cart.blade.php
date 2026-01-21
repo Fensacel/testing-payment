@@ -25,99 +25,218 @@
 
     @if(session('cart') && count(session('cart')) > 0)
         <div class="flex flex-col lg:flex-row gap-8">
-            <div class="flex-grow bg-white rounded-xl shadow overflow-hidden">
-                <table class="w-full">
-                    <thead class="bg-gray-100 border-b">
-                        <tr>
-                            <th class="py-4 px-4 w-10 text-center">
-                                <input type="checkbox" id="select-all" checked onclick="toggleAll(this)" 
-                                       class="w-5 h-5 text-black rounded border-gray-300 focus:ring-gray-500 cursor-pointer">
-                            </th>
-                            <th class="text-left py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Produk</th>
-                            <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Harga</th>
-                            <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Qty</th>
-                            <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm hidden sm:table-cell">Total</th>
-                            <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Hapus</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @foreach($syncedCart as $id => $details)
-                            @php 
-                                $price = $details['price'];
-                                $discount = $details['discount_percentage'] ?? 0;
-                                if ($discount > 0) {
-                                    $price = $price - ($price * $discount / 100);
-                                }
-                                $subtotal = $price * $details['quantity'];
-                            @endphp
-                            
-                            <tr class="hover:bg-gray-50 transition">
-                                <td class="py-4 px-4 text-center">
-                                    @php
-                                        $originalTotal = $details['price'] * $details['quantity'];
-                                        $productDiscount = $originalTotal - $subtotal;
-                                    @endphp
-                                    <input type="checkbox" checked 
-                                           class="item-checkbox w-5 h-5 text-black rounded border-gray-300 focus:ring-gray-500 cursor-pointer"
-                                           data-id="{{ $id }}" 
-                                           data-original="{{ $originalTotal }}"
-                                           data-discount="{{ $productDiscount }}"
-                                           data-subtotal="{{ $subtotal }}"
-                                           onchange="recalculateTotal()">
-                                </td>
-                                
-                                <td class="py-4 px-2">
-                                    <div class="flex items-center">
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($details['image']) }}" class="w-12 h-12 md:w-16 md:h-16 object-cover rounded border mr-3 hidden sm:block">
-                                        <div>
-                                            <span class="font-bold text-gray-800 block">{{ $details['name'] }}</span>
-                                            <span class="text-xs text-gray-500 sm:hidden">x{{ $details['quantity'] }} @ Rp {{ number_format($details['price'],0,',','.') }}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                
-                                <td class="py-4 px-2 text-center text-sm">
-                                    @if(isset($details['discount_percentage']) && $details['discount_percentage'] > 0)
-                                        <div class="flex flex-col items-center gap-1">
-                                            <span class="text-xs text-red-500 font-bold">-{{ number_format($details['discount_percentage'], 0) }}%</span>
-                                            <span class="text-xs text-gray-400 line-through">Rp {{ number_format($details['price'], 0, ',', '.') }}</span>
-                                            <span class="font-bold text-black">Rp {{ number_format($price, 0, ',', '.') }}</span>
-                                        </div>
-                                    @else
-                                        Rp {{ number_format($details['price'], 0, ',', '.') }}
-                                    @endif
-                                </td>
-                                
-                                <td class="py-4 px-2 text-center">
-                                    <div class="inline-flex items-center bg-gray-100 rounded-lg border border-gray-200">
-                                        <button onclick="updateQuantity('{{ $id }}', -1)" class="w-8 h-8 hover:bg-gray-200 transition flex items-center justify-center font-bold text-gray-600">
-                                            -
-                                        </button>
-                                        <span class="px-3 py-1 font-bold text-sm min-w-[40px] text-center" id="qty-{{ $id }}">{{ $details['quantity'] }}</span>
-                                        <button onclick="updateQuantity('{{ $id }}', 1)" class="w-8 h-8 hover:bg-gray-200 transition flex items-center justify-center font-bold text-gray-600">
-                                            +
-                                        </button>
-                                    </div>
-                                </td>
-                                
-                                <td class="py-4 px-2 text-center font-bold text-black hidden sm:table-cell">
-                                    Rp {{ number_format($subtotal, 0, ',', '.') }}
-                                </td>
-                                
-                                <td class="py-4 px-2 text-center">
-                                    <form action="{{ route('cart.remove') }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <input type="hidden" name="id" value="{{ $id }}">
-                                        <button type="submit" class="text-red-400 hover:text-red-600 transition" onclick="return confirm('Hapus barang ini?')">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </form>
-                                </td>
+            <div class="flex-grow">
+                <!-- Desktop View: Table -->
+                <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-100 border-b">
+                            <tr>
+                                <th class="py-4 px-4 w-10 text-center">
+                                    <input type="checkbox" id="select-all" checked onclick="toggleAll(this)" 
+                                           class="w-5 h-5 text-black rounded border-gray-300 focus:ring-gray-500 cursor-pointer">
+                                </th>
+                                <th class="text-left py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Produk</th>
+                                <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Harga</th>
+                                <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Qty</th>
+                                <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm hidden sm:table-cell">Total</th>
+                                <th class="text-center py-4 px-2 text-gray-600 font-semibold uppercase text-sm">Hapus</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach($syncedCart as $id => $details)
+                                @php 
+                                    $price = $details['price'];
+                                    $discount = $details['discount_percentage'] ?? 0;
+                                    if ($discount > 0) {
+                                        $price = $price - ($price * $discount / 100);
+                                    }
+                                    $subtotal = $price * $details['quantity'];
+                                @endphp
+                                
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="py-4 px-4 text-center">
+                                        @php
+                                            $originalTotal = $details['price'] * $details['quantity'];
+                                            $productDiscount = $originalTotal - $subtotal;
+                                        @endphp
+                                        <input type="checkbox" checked 
+                                               class="item-checkbox w-5 h-5 text-black rounded border-gray-300 focus:ring-gray-500 cursor-pointer"
+                                               data-id="{{ $id }}" 
+                                               data-original="{{ $originalTotal }}"
+                                               data-discount="{{ $productDiscount }}"
+                                               data-subtotal="{{ $subtotal }}"
+                                               onchange="recalculateTotal()">
+                                    </td>
+                                    
+                                    <td class="py-4 px-2">
+                                        <div class="flex items-center">
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::url($details['image']) }}" class="w-12 h-12 md:w-16 md:h-16 object-cover rounded border mr-3 hidden sm:block">
+                                            <div>
+                                                <span class="font-bold text-gray-800 block">{{ $details['name'] }}</span>
+                                                <span class="text-xs text-gray-500 sm:hidden">x{{ $details['quantity'] }} @ Rp {{ number_format($details['price'],0,',','.') }}</span>
+                                                
+                                                @if(isset($details['available_packages']) && $details['available_packages']->count() > 0)
+                                                <div class="relative mt-2 max-w-[200px]">
+                                                    <select onchange="changePackage('{{ $id }}', this.value)" 
+                                                            class="appearance-none w-full bg-white border border-gray-300 hover:border-gray-400 text-gray-700 py-2 pl-3 pr-8 rounded-lg shadow-sm leading-tight focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-xs transition cursor-pointer font-medium">
+                                                        <option value="" disabled>Pilih Paket</option>
+                                                        @foreach($details['available_packages'] as $pkg)
+                                                            <option value="{{ $pkg->id }}" {{ ($details['package_id'] ?? '') == $pkg->id ? 'selected' : '' }}>
+                                                                {{ $pkg->name }} - Rp {{ number_format($pkg->price > 0 ? $pkg->price : $details['price'], 0, ',', '.') }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                                        <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="py-4 px-2 text-center text-sm">
+                                        @if(isset($details['discount_percentage']) && $details['discount_percentage'] > 0)
+                                            <div class="flex flex-col items-center gap-1">
+                                                <span class="text-xs text-red-500 font-bold">-{{ number_format($details['discount_percentage'], 0) }}%</span>
+                                                <span class="text-xs text-gray-400 line-through">Rp {{ number_format($details['price'], 0, ',', '.') }}</span>
+                                                <span class="font-bold text-black">Rp {{ number_format($price, 0, ',', '.') }}</span>
+                                            </div>
+                                        @else
+                                            Rp {{ number_format($details['price'], 0, ',', '.') }}
+                                        @endif
+                                    </td>
+                                    
+                                    <td class="py-4 px-2 text-center">
+                                        <div class="inline-flex items-center bg-gray-100 rounded-lg border border-gray-200">
+                                            <button onclick="updateQuantity('{{ $id }}', -1)" class="w-8 h-8 hover:bg-gray-200 transition flex items-center justify-center font-bold text-gray-600">
+                                                -
+                                            </button>
+                                            <span class="px-3 py-1 font-bold text-sm min-w-[40px] text-center" id="qty-{{ $id }}">{{ $details['quantity'] }}</span>
+                                            <button onclick="updateQuantity('{{ $id }}', 1)" class="w-8 h-8 hover:bg-gray-200 transition flex items-center justify-center font-bold text-gray-600">
+                                                +
+                                            </button>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="py-4 px-2 text-center font-bold text-black hidden sm:table-cell">
+                                        Rp {{ number_format($subtotal, 0, ',', '.') }}
+                                    </td>
+                                    
+                                    <td class="py-4 px-2 text-center">
+                                        <form action="{{ route('cart.remove') }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="id" value="{{ $id }}">
+                                            <button type="submit" class="text-red-400 hover:text-red-600 transition" onclick="return confirm('Hapus barang ini?')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile View: Cards -->
+                <div class="md:hidden space-y-4">
+                    @foreach($syncedCart as $id => $details)
+                        @php 
+                            $price = $details['price'];
+                            $discount = $details['discount_percentage'] ?? 0;
+                            if ($discount > 0) {
+                                $price = $price - ($price * $discount / 100);
+                            }
+                            $subtotal = $price * $details['quantity'];
+                            $originalTotal = $details['price'] * $details['quantity'];
+                            $productDiscount = $originalTotal - $subtotal;
+                        @endphp
+                        
+                        <div class="bg-white p-4 rounded-xl shadow border border-gray-100 relative">
+                            <!-- Delete Button (Top Right) -->
+                            <form action="{{ route('cart.remove') }}" method="POST" class="absolute top-3 right-3 z-10">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="id" value="{{ $id }}">
+                                <button type="submit" class="text-gray-300 hover:text-red-500 p-1" onclick="return confirm('Hapus barang ini?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+    
+                            <div class="flex gap-4">
+                                <!-- Checkbox -->
+                                <div class="flex items-start pt-2">
+                                     <input type="checkbox" checked 
+                                            class="item-checkbox w-5 h-5 text-black rounded border-gray-300 focus:ring-gray-500 cursor-pointer"
+                                            data-id="{{ $id }}" 
+                                            data-original="{{ $originalTotal }}"
+                                            data-discount="{{ $productDiscount }}"
+                                            data-subtotal="{{ $subtotal }}"
+                                            onchange="recalculateTotal()">
+                                </div>
+                                
+                                <!-- Image -->
+                                <div class="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200">
+                                     <img src="{{ \Illuminate\Support\Facades\Storage::url($details['image']) }}" class="w-full h-full object-cover">
+                                </div>
+    
+                                <!-- Detail -->
+                                <div class="flex-1 min-w-0">
+                                     <h3 class="font-bold text-gray-800 text-sm line-clamp-2 pr-6 mb-1">{{ $details['name'] }}</h3>
+                                     
+                                     <!-- Price Info -->
+                                     <div class="text-xs text-gray-500 mb-2">
+                                        @if($discount > 0)
+                                            <span class="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold mr-1">-{{ $discount }}%</span>
+                                            <span class="line-through text-gray-400">Rp {{ number_format($details['price'], 0, ',', '.') }}</span>
+                                            <span class="font-bold text-black ml-1">Rp {{ number_format($price, 0, ',', '.') }}</span>
+                                        @else
+                                            <span class="font-bold text-black">Rp {{ number_format($price, 0, ',', '.') }}</span>
+                                        @endif
+                                     </div>
+                                     
+                                     <!-- Package Selector Mobile -->
+                                     @if(isset($details['available_packages']) && $details['available_packages']->count() > 0)
+                                     <div class="relative mb-3 max-w-[180px]">
+                                         <select onchange="changePackage('{{ $id }}', this.value)" 
+                                                 class="appearance-none w-full bg-gray-50 border border-gray-200 text-gray-700 py-1.5 pl-3 pr-8 rounded-lg shadow-sm leading-tight focus:outline-none focus:ring-1 focus:ring-black focus:border-black text-xs transition cursor-pointer font-medium">
+                                             <option value="" disabled>Pilih Paket</option>
+                                             @foreach($details['available_packages'] as $pkg)
+                                                 <option value="{{ $pkg->id }}" {{ ($details['package_id'] ?? '') == $pkg->id ? 'selected' : '' }}>
+                                                     {{ $pkg->name }} - Rp {{ number_format($pkg->price > 0 ? $pkg->price : $details['price'], 0, ',', '.') }}
+                                                 </option>
+                                             @endforeach
+                                         </select>
+                                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                             <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                 <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                                             </svg>
+                                         </div>
+                                     </div>
+                                     @endif
+                                     
+                                     <div class="flex justify-between items-end">
+                                         <!-- Qty Control -->
+                                         <div class="inline-flex items-center bg-gray-50 rounded-lg border border-gray-200 h-8">
+                                             <button onclick="updateQuantity('{{ $id }}', -1)" class="w-8 h-full hover:bg-gray-200 transition flex items-center justify-center font-bold text-gray-600 text-sm">-</button>
+                                             <span class="px-2 font-bold text-sm min-w-[30px] text-center" id="qty-mobile-{{ $id }}">{{ $details['quantity'] }}</span>
+                                             <button onclick="updateQuantity('{{ $id }}', 1)" class="w-8 h-full hover:bg-gray-200 transition flex items-center justify-center font-bold text-gray-600 text-sm">+</button>
+                                         </div>
+                                         
+                                         <!-- Subtotal Item -->
+                                         <div class="text-right">
+                                             <span class="block text-[10px] text-gray-400">Total</span>
+                                             <span class="font-bold text-black text-sm">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                                         </div>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
 
             <div class="w-full lg:w-1/3">
@@ -304,8 +423,17 @@
         let subtotalBeforeDiscount = 0;
         let totalProductDiscount = 0;
         
+        const processedIds = new Set();
+
         checkboxes.forEach(box => {
             if (box.checked) {
+                const id = box.getAttribute('data-id');
+                
+                // Skip if we've already calculated this item (prevents double counting item in Desktop & Mobile view)
+                if (processedIds.has(id)) return;
+                
+                processedIds.add(id);
+
                 const original = parseFloat(box.getAttribute('data-original'));
                 const discount = parseFloat(box.getAttribute('data-discount'));
                 
@@ -376,14 +504,17 @@
             return;
         }
 
-        // Kumpulkan ID barang yang dicentang
-        let selectedIds = [];
+        // Kumpulkan ID barang yang dicentang (Unique)
+        let selectedIds = new Set();
         checkboxes.forEach(box => {
-            selectedIds.push(box.getAttribute('data-id'));
+            selectedIds.add(box.getAttribute('data-id'));
         });
+        
+        // Convert Set to Array
+        const uniqueIds = Array.from(selectedIds);
 
         // Masukkan ke input hidden dan submit form
-        document.getElementById('selected-products-input').value = selectedIds.join(',');
+        document.getElementById('selected-products-input').value = uniqueIds.join(',');
         document.getElementById('checkout-form').submit();
     }
 
@@ -427,8 +558,56 @@
         form.submit();
     }
 
+    // 6. UPDATE PACKAGE
+    function changePackage(cartId, newPackageId) {
+        // Langsung submit tanpa konfirmasi
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route("cart.updatePackage") }}';
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'id';
+        idInput.value = cartId;
+        form.appendChild(idInput);
+        
+        const pkgInput = document.createElement('input');
+        pkgInput.type = 'hidden';
+        pkgInput.name = 'package_id';
+        pkgInput.value = newPackageId;
+        form.appendChild(pkgInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+
     // Jalankan saat load
     document.addEventListener("DOMContentLoaded", function() {
+        // Sync checkboxes between Desktop and Mobile
+        const allCheckboxes = document.querySelectorAll('.item-checkbox');
+        allCheckboxes.forEach(box => {
+            box.addEventListener('change', function(e) {
+                const id = this.getAttribute('data-id');
+                const isChecked = this.checked;
+                
+                // Find all other checkboxes with the same ID and update them
+                document.querySelectorAll(`.item-checkbox[data-id="${id}"]`).forEach(otherBox => {
+                    if (otherBox !== this) {
+                        otherBox.checked = isChecked;
+                    }
+                });
+                
+                recalculateTotal();
+            });
+        });
+
         recalculateTotal();
     });
 </script>

@@ -35,9 +35,9 @@ class OrderController extends Controller
             return $item->price * $item->quantity;
         });
         
-        // Calculate admin fee (2.5% of subtotal after promo discount)
+        // Calculate admin fee (2% of subtotal after promo discount)
         $subtotalAfterPromo = $subtotal - $order->promo_discount;
-        $adminFee = $subtotalAfterPromo * 0.025;
+        $adminFee = $subtotalAfterPromo * 0.01;
         
         return view('admin.orders.show', compact('order', 'subtotal', 'adminFee'));
     }

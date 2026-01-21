@@ -3,18 +3,18 @@
 @section('title', 'Detail Pemesanan')
 
 @section('content')
-<div class="bg-gray-100 min-h-screen py-8">
+<div class="bg-gray-100 min-h-screen py-6 md:py-8">
     <div class="container mx-auto px-4">
         <!-- Back Button -->
         <a href="{{ route('cart.index') }}" class="inline-flex items-center text-gray-600 hover:text-black transition mb-4">
             <i class="fas fa-arrow-left mr-2"></i> Kembali ke Keranjang
         </a>
         
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Checkout</h1>
+        <h1 class="text-xl md:text-2xl font-bold text-gray-800 mb-6">Checkout</h1>
 
         <form action="{{ route('cart.payment') }}" method="POST">
             @csrf
-            <input type="hidden" name="selected_products" value="{{ implode(',', $selectedItemIds) }}">
+            <input type="hidden" name="selected_products" value="{{ implode(',', $selectedItemKeys) }}">
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
@@ -28,7 +28,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-gray-600 text-sm font-bold mb-2">Nama Lengkap</label>
-                                <input type="text" name="customer_name" class="w-full border rounded-lg px-4 py-2 focus:ring focus:ring-blue-200" placeholder="Contoh: Fachri Mufidan" required>
+                                <input type="text" name="customer_name" class="w-full border rounded-lg px-4 py-2 focus:ring focus:ring-blue-200" placeholder="Contoh: Budi Santoso" required>
                             </div>
                             <div>
                                 <label class="block text-gray-600 text-sm font-bold mb-2">Nomor WhatsApp</label>
@@ -101,7 +101,7 @@
                             $subtotalAfterDiscount = $subtotalBeforeDiscount - $totalDiscount;
                             // Subtract promo discount if exists
                             $subtotalAfterPromo = $subtotalAfterDiscount - (isset($promoDiscount) ? $promoDiscount : 0);
-                            $serviceFee = $subtotalAfterPromo * 0.025; // 2.5% service fee
+                            $serviceFee = $subtotalAfterPromo * 0.01; // 2% service fee
                             $finalTotal = $subtotalAfterPromo + $serviceFee;
                         @endphp
 
@@ -123,7 +123,7 @@
                             </div>
                             @endif
                             <div class="flex justify-between">
-                                <span>Biaya Layanan (2.5%)</span>
+                                <span>Biaya Admin (1%)</span>
                                 <span>Rp {{ number_format($serviceFee, 0, ',', '.') }}</span>
                             </div>
                         </div>

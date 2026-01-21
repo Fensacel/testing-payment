@@ -19,6 +19,12 @@ class Order extends Model
         'snap_token',
         'promo_code_id',
         'promo_discount',
+        'payment_type',
+        'payment_info',
+    ];
+
+    protected $casts = [
+        'payment_info' => 'array',
     ];
 
     public function items(): HasMany

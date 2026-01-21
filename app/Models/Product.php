@@ -19,4 +19,8 @@ class Product extends Model
         'image',
         'is_active',
     ];
+    public function packages()
+    {
+        return $this->hasMany(ProductPackage::class);
+    }
 }

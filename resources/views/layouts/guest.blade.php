@@ -83,9 +83,31 @@
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
             }
+
+            /* Smooth page transition on navigation */
+            .page-leave {
+                opacity: 0;
+                transform: translateY(8px);
+                transition: opacity 240ms ease, transform 240ms ease;
+            }
         </style>
     </head>
     <body class="antialiased">
         {{ $slot }}
+
+        <script>
+            (function() {
+                const isModifier = (e) => e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
+                document.addEventListener('click', function(e) {
+                    const a = e.target.closest('a[data-smooth]');
+                    if (!a) return;
+                    const href = a.getAttribute('href');
+                    if (!href || isModifier(e) || a.target === '_blank') return;
+                    e.preventDefault();
+                    document.body.classList.add('page-leave');
+                    setTimeout(function() { window.location.href = href; }, 250);
+                });
+            })();
+        </script>
     </body>
 </html>

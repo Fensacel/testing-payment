@@ -111,14 +111,26 @@
 
             </div>
 
+            <!-- Ringkasan Pembayaran -->
             <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 sticky top-24">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                     <h2 class="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Ringkasan Pembayaran</h2>
+                    
+                    @php
+                        // Calculate subtotal from order items
+                        $subtotal = $order->items->sum(function($item) {
+                            return $item->price * $item->quantity;
+                        });
+                        
+                        // Calculate admin fee (2% of subtotal after promo discount)
+                        $subtotalAfterPromo = $subtotal - $order->promo_discount;
+                        $adminFee = $subtotalAfterPromo * 0.01;
+                    @endphp
                     
                     <div class="space-y-3 text-sm text-gray-600 mb-6">
                         <div class="flex justify-between">
                             <span>Subtotal Produk</span>
-                            <span class="font-medium">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
+                            <span class="font-medium">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                         </div>
                         
                         @if($order->promo_code_id && $order->promoCode)
@@ -136,15 +148,82 @@
                         </div>
                         @endif
                         
-                        <div class="flex justify-between text-green-600">
-                            <span>Biaya Layanan</span>
-                            <span class="font-medium">Gratis</span>
+                        <div class="flex justify-between">
+                            <span>Biaya Admin (1%)</span>
+                            <span class="font-medium">Rp {{ number_format($adminFee, 0, ',', '.') }}</span>
                         </div>
                         <div class="border-t border-dashed my-2"></div>
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-gray-800 text-lg">Total Tagihan</span>
                             <span class="font-bold text-xl text-black">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
                         </div>
+
+                        <!-- PAYMENT METHOD INFO (NEW) -->
+                        @if($order->payment_type && $order->payment_info)
+                            <div class="mt-4 pt-4 border-t border-gray-100 bg-blue-50 -mx-6 px-6 py-4">
+                                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Metode Pembayaran</p>
+                                
+                                @if(isset($order->payment_info['bank']))
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <i class="fas fa-university text-blue-600"></i>
+                                        <span class="font-bold text-gray-800">Bank Transfer - {{ $order->payment_info['bank'] }}</span>
+                                    </div>
+                                    @if($order->status == 'pending')
+                                    <div class="bg-white px-3 py-2 rounded border border-blue-100 flex justify-between items-center">
+                                        <span class="font-mono font-bold text-lg text-blue-700 tracking-wider">{{ $order->payment_info['va_number'] }}</span>
+                                        <button onclick="navigator.clipboard.writeText('{{ $order->payment_info['va_number'] }}')" class="text-xs text-gray-400 hover:text-blue-600"><i class="fas fa-copy"></i></button>
+                                    </div>
+                                    @endif
+                                @elseif(isset($order->payment_info['store']))
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <i class="fas fa-store text-blue-600"></i>
+                                        <span class="font-bold text-gray-800">{{ $order->payment_info['store'] }}</span>
+                                    </div>
+                                    @if($order->status == 'pending')
+                                    <div class="bg-white px-3 py-2 rounded border border-blue-100">
+                                        <span class="block text-xs text-gray-400">Kode Pembayaran:</span>
+                                        <span class="font-mono font-bold text-lg text-blue-700 tracking-wider">{{ $order->payment_info['payment_code'] }}</span>
+                                    </div>
+                                    @endif
+                                @elseif(isset($order->payment_info['bill_key']))
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <i class="fas fa-file-invoice text-blue-600"></i>
+                                        <span class="font-bold text-gray-800">Mandiri Bill</span>
+                                    </div>
+                                    @if($order->status == 'pending')
+                                    <div class="bg-white px-3 py-2 rounded border border-blue-100 space-y-1">
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-gray-500">Bill Key:</span>
+                                            <span class="font-mono font-bold text-blue-700">{{ $order->payment_info['bill_key'] }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-gray-500">Biller Code:</span>
+                                            <span class="font-mono font-bold text-blue-700">{{ $order->payment_info['biller_code'] }}</span>
+                                        </div>
+                                    </div>
+                                    @endif
+                                @elseif($order->payment_type == 'qris' || $order->payment_type == 'gopay')
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <i class="fas fa-qrcode text-blue-600"></i>
+                                        <span class="font-bold text-gray-800">QRIS / GoPay</span>
+                                    </div>
+                                    @if($order->status == 'pending')
+                                        @if(isset($order->payment_info['qr_code_url']) && $order->payment_info['qr_code_url'])
+                                            <div class="bg-white p-4 rounded border border-blue-100 flex flex-col items-center">
+                                                <p class="text-xs text-center text-gray-500 mb-2">Scan QR Code di bawah ini:</p>
+                                                <img src="{{ $order->payment_info['qr_code_url'] }}" class="w-48 h-48 object-contain border rounded mb-2">
+                                                <p class="text-[10px] text-gray-400">Atau klik tombol "Bayar Sekarang" jika QR tidak muncul.</p>
+                                            </div>
+                                        @else
+                                            <div class="bg-blue-100 px-3 py-2 rounded text-blue-800 text-xs flex gap-2 items-center">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>Klik tombol <b>"Bayar Sekarang"</b> di bawah untuk melihat kode QR.</span>
+                                            </div>
+                                        @endif
+                                    @endif
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
                     @if($order->status == 'pending')

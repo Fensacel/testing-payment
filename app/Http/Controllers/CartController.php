@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\PromoCode;
 use App\Models\OrderItem; 
+use App\Models\ProductPackage; // Tambahkan import
 use Illuminate\Http\Request;
 use Midtrans\Config;
 use Midtrans\Snap;
@@ -25,26 +26,52 @@ class CartController extends Controller
         $syncedCart = [];
         $total = 0;
         
-        foreach($cart as $id => $details) {
-            $product = Product::find($id);
+        foreach($cart as $key => $details) {
+            // Determine Product ID (handle composite keys)
+            $productId = $details['product_id'] ?? (strpos($key, '_') !== false ? explode('_', $key)[0] : $key);
+            $productId = $details['product_id'] ?? (strpos($key, '_') !== false ? explode('_', $key)[0] : $key);
+            $product = Product::with('packages')->find($productId);
             
             // If product still exists, use latest data
             if ($product) {
-                $syncedCart[$id] = [
-                    'name' => $product->name,
+                // Handle Package Data Synching
+                $packageId = $details['package_id'] ?? null;
+                $packageName = null;
+                $price = $product->price;
+
+                if ($packageId) {
+                    $package = ProductPackage::find($packageId);
+                    if ($package) {
+                        $packageName = $package->name;
+                        if ($package->price > 0) {
+                            $price = $package->price;
+                        }
+                    }
+                }
+
+                $syncedCart[$key] = [
+                    'product_id' => $product->id,
+                    'package_id' => $packageId,
+                    'package_name' => $packageName,
+                    'name' => $product->name . ($packageName ? " - $packageName" : ""),
                     'quantity' => min($details['quantity'], $product->stock), // Ensure quantity doesn't exceed stock
-                    'price' => $product->price,
+                    'price' => $price,
                     'discount_percentage' => $product->discount_percentage,
                     'image' => $product->image,
-                    'stock' => $product->stock
+                    'quantity' => min($details['quantity'], $product->stock), // Ensure quantity doesn't exceed stock
+                    'price' => $price,
+                    'discount_percentage' => $product->discount_percentage,
+                    'image' => $product->image,
+                    'stock' => $product->stock,
+                    'available_packages' => $product->packages
                 ];
                 
                 // Calculate price with discount
-                $price = $product->price;
+                $finalPrice = $price;
                 if ($product->discount_percentage > 0) {
-                    $price = $price - ($price * $product->discount_percentage / 100);
+                    $finalPrice = $finalPrice - ($finalPrice * $product->discount_percentage / 100);
                 }
-                $total += $price * $syncedCart[$id]['quantity'];
+                $total += $finalPrice * $syncedCart[$key]['quantity'];
             }
             // If product deleted, remove from cart
         }
@@ -74,21 +101,41 @@ class CartController extends Controller
 
         $cart = session()->get('cart', []);
         $quantity = $request->input('quantity', 1);
+        
+        // Handle Package
+        $packageId = $request->input('package_id');
+        $cartKey = $id;
+        $packageName = null;
+        $price = $product->price;
 
-        if(isset($cart[$id])) {
+        if ($packageId) {
+            $package = ProductPackage::where('product_id', $id)->find($packageId);
+            if ($package) {
+                $cartKey = $id . '_' . $packageId;
+                $packageName = $package->name;
+                if ($package->price > 0) {
+                    $price = $package->price;
+                }
+            }
+        }
+
+        if(isset($cart[$cartKey])) {
             // Cek apakah penambahan melebihi stok
-            if (($cart[$id]['quantity'] + $quantity) > $product->stock) {
+            if (($cart[$cartKey]['quantity'] + $quantity) > $product->stock) {
                 return redirect()->back()->with('error', 'Stok tidak mencukupi!');
             }
-            $cart[$id]['quantity'] += $quantity;
+            $cart[$cartKey]['quantity'] += $quantity;
         } else {
             if ($quantity > $product->stock) {
                 return redirect()->back()->with('error', 'Stok tidak mencukupi!');
             }
-            $cart[$id] = [
-                "name" => $product->name,
+            $cart[$cartKey] = [
+                "product_id" => $product->id,
+                "package_id" => $packageId,
+                "package_name" => $packageName,
+                "name" => $product->name . ($packageName ? " - $packageName" : ""),
                 "quantity" => $quantity,
-                "price" => $product->price,
+                "price" => $price,
                 "discount_percentage" => $product->discount_percentage,
                 "image" => $product->image
             ];
@@ -120,14 +167,15 @@ class CartController extends Controller
     public function updateQuantity(Request $request)
     {
         $cart = session()->get('cart', []);
-        $id = $request->id;
+        $key = $request->id;
         $quantity = $request->quantity;
 
-        if (isset($cart[$id])) {
-            $product = Product::find($id);
+        if (isset($cart[$key])) {
+            $productId = $cart[$key]['product_id'] ?? (strpos($key, '_') !== false ? explode('_', $key)[0] : $key);
+            $product = Product::find($productId);
             
             if ($product && $quantity <= $product->stock) {
-                $cart[$id]['quantity'] = $quantity;
+                $cart[$key]['quantity'] = $quantity;
                 session()->put('cart', $cart);
                 return redirect()->back();
             } else {
@@ -138,7 +186,59 @@ class CartController extends Controller
         return redirect()->back();
     }
 
-    // 3c. Apply Promo Code
+    // 3c. Update Package di Keranjang
+    public function updatePackage(Request $request)
+    {
+        $cart = session()->get('cart', []);
+        $oldKey = $request->id; // cart key lama
+        $newPackageId = $request->package_id;
+        
+        if (!isset($cart[$oldKey])) {
+            return redirect()->back();
+        }
+        
+        $item = $cart[$oldKey];
+        $productId = $item['product_id'] ?? (strpos($oldKey, '_') !== false ? explode('_', $oldKey)[0] : $oldKey);
+        $quantity = $item['quantity'];
+
+        // Hapus item lama
+        unset($cart[$oldKey]);
+        
+        // Buat item baru
+        $product = Product::find($productId);
+        $package = ProductPackage::find($newPackageId);
+        
+        if (!$product || !$package) {
+             return redirect()->back()->with('error', 'Paket tidak valid');
+        }
+
+        // Generate new key
+        $newKey = $productId . '_' . $newPackageId;
+        
+        // Harga baru
+        $price = $package->price > 0 ? $package->price : $product->price;
+
+        // Cek jika newKey sudah ada di cart (merge quantity)
+        if (isset($cart[$newKey])) {
+             $cart[$newKey]['quantity'] += $quantity;
+        } else {
+             $cart[$newKey] = [
+                "product_id" => $productId,
+                "package_id" => $newPackageId,
+                "package_name" => $package->name,
+                "name" => $product->name . " - " . $package->name,
+                "quantity" => $quantity,
+                "price" => $price,
+                "discount_percentage" => $product->discount_percentage,
+                "image" => $product->image
+             ];
+        }
+        
+        session()->put('cart', $cart);
+        return redirect()->back()->with('success', 'Paket berhasil diubah');
+    }
+
+    // 3d. Apply Promo Code
     public function applyPromo(Request $request)
     {
         $request->validate([
@@ -159,7 +259,7 @@ class CartController extends Controller
             if ($promo->used_count >= $promo->max_uses) {
                 return redirect()->back()->with('error', 'Kode promo sudah mencapai batas penggunaan');
             }
-            if ($promo->expires_at && now()->gt(Carbon::parse($promo->expires_at))) {
+            if ($promo->expires_at && now()->gt(\Carbon\Carbon::parse($promo->expires_at))) {
                 return redirect()->back()->with('error', 'Kode promo sudah kadaluarsa');
             }
             return redirect()->back()->with('error', 'Kode promo tidak dapat digunakan');
@@ -190,7 +290,7 @@ class CartController extends Controller
         return redirect()->back()->with('success', 'Kode promo berhasil diterapkan!');
     }
 
-    // 3d. Remove Promo Code
+    // 3e. Remove Promo Code
     public function removePromo()
     {
         session()->forget('promo_code');
@@ -204,39 +304,49 @@ class CartController extends Controller
             return redirect()->route('cart.index')->with('error', 'Pilih barang dulu.');
         }
 
-        $selectedItemIds = explode(',', $request->input('selected_products'));
+        $selectedItemKeys = explode(',', $request->input('selected_products'));
+        $selectedItemKeys = array_map('trim', $selectedItemKeys);
+
         $cart = session()->get('cart', []);
+
+        \Log::info('Checkout Debug:', [
+            'input_keys' => $selectedItemKeys,
+            'session_keys' => array_keys($cart)
+        ]);
         
         $itemsToBuy = [];
         $subtotal = 0;
 
-        foreach ($selectedItemIds as $id) {
-            if (isset($cart[$id])) {
-                // Fetch latest product data from database
-                $product = Product::find($id);
+        foreach ($selectedItemKeys as $key) {
+            if (isset($cart[$key])) {
+                $productId = $cart[$key]['product_id'] ?? (strpos($key, '_') !== false ? explode('_', $key)[0] : $key);
+                $product = Product::find($productId);
                 
                 if (!$product) {
                     continue; // Skip if product deleted
                 }
                 
-                // Use latest data from database
+                // Use data from cart (price might be package price)
+                $price = $cart[$key]['price'];
+                $discountPercentage = $cart[$key]['discount_percentage'] ?? $product->discount_percentage;
+
                 $item = [
-                    'id' => $id,
-                    'name' => $product->name,
-                    'quantity' => min($cart[$id]['quantity'], $product->stock),
-                    'price' => $product->price,
-                    'discount_percentage' => $product->discount_percentage,
+                    'id' => $key, // Use cart key as ID
+                    'name' => $cart[$key]['name'], // Already includes package name
+                    'quantity' => min($cart[$key]['quantity'], $product->stock),
+                    'price' => $price,
+                    'discount_percentage' => $discountPercentage,
                     'image' => $product->image
                 ];
                 
                 $itemsToBuy[] = $item;
                 
-                // Calculate price with latest discount
-                $price = $product->price;
-                if ($product->discount_percentage > 0) {
-                    $price = $price - ($price * $product->discount_percentage / 100);
+                // Calculate price with discount
+                $finalPrice = $price;
+                if ($discountPercentage > 0) {
+                    $finalPrice = $finalPrice - ($finalPrice * $discountPercentage / 100);
                 }
-                $subtotal += $price * $item['quantity'];
+                $subtotal += $finalPrice * $item['quantity'];
             }
         }
 
@@ -253,7 +363,7 @@ class CartController extends Controller
             $promoDiscount = $subtotal * ($promoCode['discount_percentage'] / 100);
         }
 
-        return view('checkout', compact('itemsToBuy', 'subtotal', 'selectedItemIds', 'promoCode', 'promoDiscount'));
+        return view('checkout', compact('itemsToBuy', 'subtotal', 'selectedItemKeys', 'promoCode', 'promoDiscount'));
     }
 
     // 5. PROSES PEMBAYARAN (POTONG STOK DISINI)
@@ -266,30 +376,33 @@ class CartController extends Controller
             'selected_products' => 'required'
         ]);
 
-        $selectedItemIds = explode(',', $request->input('selected_products'));
+        $selectedItemKeys = explode(',', $request->input('selected_products'));
         $cart = session()->get('cart', []);
         
         // Mulai Transaksi Database (Agar aman)
-        return DB::transaction(function () use ($request, $selectedItemIds, $cart) {
+        return DB::transaction(function () use ($request, $selectedItemKeys, $cart) {
             
             $subtotal = 0;
 
             // Tahap 1: Validasi Stok Sebelum Membuat Order
-            foreach ($selectedItemIds as $id) {
-                if (isset($cart[$id])) {
-                    $product = Product::lockForUpdate()->find($id); // Kunci baris database agar tidak bentrok
+            foreach ($selectedItemKeys as $key) {
+                if (isset($cart[$key])) {
+                    $productId = $cart[$key]['product_id'] ?? (strpos($key, '_') !== false ? explode('_', $key)[0] : $key);
+                    $product = Product::lockForUpdate()->find($productId); // Kunci baris database agar tidak bentrok
                     
-                    if (!$product || $product->stock < $cart[$id]['quantity']) {
+                    if (!$product || $product->stock < $cart[$key]['quantity']) {
                         // Jika stok habis saat mau bayar, batalkan semua
-                        return redirect()->route('cart.index')->with('error', 'Stok ' . $cart[$id]['name'] . ' tidak mencukupi. Transaksi dibatalkan.');
+                        return redirect()->route('cart.index')->with('error', 'Stok ' . $cart[$key]['name'] . ' tidak mencukupi. Transaksi dibatalkan.');
                     }
                     
-                    // Calculate price with product discount
-                    $price = $cart[$id]['price'];
-                    if (isset($cart[$id]['discount_percentage']) && $cart[$id]['discount_percentage'] > 0) {
-                        $price = $price - ($price * $cart[$id]['discount_percentage'] / 100);
+                    // Calculate price
+                    $price = $cart[$key]['price'];
+                    $discountPercentage = $cart[$key]['discount_percentage'] ?? 0;
+                    
+                    if ($discountPercentage > 0) {
+                        $price = $price - ($price * $discountPercentage / 100);
                     }
-                    $subtotal += $price * $cart[$id]['quantity'];
+                    $subtotal += $price * $cart[$key]['quantity'];
                 }
             }
 
@@ -307,9 +420,9 @@ class CartController extends Controller
                 \Log::info('Promo Applied:', ['id' => $promoCodeId, 'discount' => $promoDiscount]);
             }
             
-            // Calculate service fee (2.5%) and grand total
+            // Calculate service fee (2%) and grand total
             $subtotalAfterPromo = $subtotal - $promoDiscount;
-            $serviceFee = $subtotalAfterPromo * 0.025;
+            $serviceFee = $subtotalAfterPromo * 0.01;
             $grandTotal = $subtotalAfterPromo + $serviceFee;
             
             \Log::info('Before Order Creation:', [
@@ -336,22 +449,25 @@ class CartController extends Controller
             ]);
 
             // Tahap 2: Simpan Item & KURANGI STOK
-            foreach ($selectedItemIds as $id) {
-                if (isset($cart[$id])) {
+            foreach ($selectedItemKeys as $key) {
+                if (isset($cart[$key])) {
+                    $productId = $cart[$key]['product_id'] ?? (strpos($key, '_') !== false ? explode('_', $key)[0] : $key);
+                    
                     // Kurangi Stok di Database Real
-                    $product = Product::find($id);
-                    $product->decrement('stock', $cart[$id]['quantity']);
+                    $product = Product::find($productId);
+                    $product->decrement('stock', $cart[$key]['quantity']);
 
                     OrderItem::create([
                         'order_id' => $order->id,
-                        'product_id' => $id,
-                        'product_name' => $cart[$id]['name'],
-                        'quantity' => $cart[$id]['quantity'],
-                        'price' => $cart[$id]['price'],
+                        'product_id' => $productId,
+                        'product_name' => $cart[$key]['name'],
+                        'package_name' => $cart[$key]['package_name'] ?? null,
+                        'quantity' => $cart[$key]['quantity'],
+                        'price' => $cart[$key]['price'],
                     ]);
                     
                     // Hapus dari session keranjang
-                    unset($cart[$id]); 
+                    unset($cart[$key]); 
                 }
             }
             session()->put('cart', $cart);
@@ -413,6 +529,51 @@ class CartController extends Controller
             try {
                 $status = Transaction::status($order->order_number);
                 
+                // --- UPDATE PAYMENT INFO (New Feature) ---
+                $paymentType = $status->payment_type ?? null;
+                $paymentInfo = [];
+
+                if ($paymentType == 'bank_transfer' && isset($status->va_numbers[0])) {
+                    $paymentInfo = [
+                        'bank' => strtoupper($status->va_numbers[0]->bank),
+                        'va_number' => $status->va_numbers[0]->va_number
+                    ];
+                } elseif ($paymentType == 'cstore' && isset($status->payment_code)) {
+                    $paymentInfo = [
+                        'store' => strtoupper($status->store),
+                        'payment_code' => $status->payment_code
+                    ];
+                } elseif ($paymentType == 'echannel') {
+                    $paymentInfo = [
+                        'bill_key' => $status->bill_key ?? null,
+                        'biller_code' => $status->biller_code ?? null
+                    ];
+                } elseif ($paymentType == 'qris' || $paymentType == 'gopay') {
+                     // Try to get QR Code URL if available (common in Core API, simpler in Snap)
+                     $qrUrl = $status->qr_code_url ?? null;
+                     
+                     // Sometimes it is in actions array for Gopay/QRIS
+                     if (!$qrUrl && isset($status->actions)) {
+                         foreach ($status->actions as $action) {
+                             if ($action->name == 'generate-qr-code') {
+                                 $qrUrl = $action->url;
+                                 break;
+                             }
+                         }
+                     }
+
+                     $paymentInfo = [
+                         'type' => 'QRIS',
+                         'qr_code_url' => $qrUrl
+                     ];
+                }
+
+                // Update Order Info
+                $order->update([
+                    'payment_type' => $paymentType,
+                    'payment_info' => !empty($paymentInfo) ? $paymentInfo : null
+                ]);
+
                 // Jika SUKSES
                 if ($status->transaction_status == 'settlement' || $status->transaction_status == 'capture') {
                     $order->update(['status' => 'success']);
