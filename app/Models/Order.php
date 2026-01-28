@@ -21,10 +21,13 @@ class Order extends Model
         'promo_discount',
         'payment_type',
         'payment_info',
+        'last_reminder_sent_at',
+        'reminder_count',
     ];
 
     protected $casts = [
         'payment_info' => 'array',
+        'last_reminder_sent_at' => 'datetime',
     ];
 
     public function items(): HasMany

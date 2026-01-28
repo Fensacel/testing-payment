@@ -46,6 +46,12 @@ Route::middleware('auth')->group(function () {
     // Fitur Toko yang butuh Login (Checkout, Payment, History)
     Route::post('checkout', [CartController::class, 'viewCheckout'])->name('cart.checkout');
     Route::post('payment', [CartController::class, 'processPayment'])->name('cart.payment');
+    
+    // Custom payment method selection
+    Route::get('payment-method/{order}', [CartController::class, 'selectPaymentMethod'])->name('payment.select');
+    Route::post('payment-method/{order}', [CartController::class, 'processPaymentMethod'])->name('payment.process');
+    Route::get('payment-cancel/{order}', [CartController::class, 'cancelPayment'])->name('payment.cancel');
+    
     Route::get('history', [CartController::class, 'history'])->name('history');
     Route::get('history/{id}', [CartController::class, 'historyDetail'])->name('history.detail');
 
@@ -53,6 +59,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Payment simulation for testing (development only)
+    Route::get('/simulate-payment/{order}', [CartController::class, 'simulatePayment'])->name('simulate.payment');
 });
 
 // Import Route Auth (Login, Register, Logout)

@@ -18,7 +18,14 @@ class Product extends Model
         'discount_percentage',
         'image',
         'is_active',
+        'category_id',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     public function packages()
     {
         return $this->hasMany(ProductPackage::class);

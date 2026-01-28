@@ -6,14 +6,18 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\PromoCode;
 use App\Models\OrderItem; 
-use App\Models\ProductPackage; // Tambahkan import
+use App\Models\ProductPackage;
+use App\Services\WhatsAppService;
+use App\Mail\PaymentReminderMail;
 use Illuminate\Http\Request;
 use Midtrans\Config;
 use Midtrans\Snap;
 use Midtrans\Transaction; 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // Tambahkan ini untuk Transaksi Database
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -500,7 +504,12 @@ class CartController extends Controller
             try {
                 $snapToken = Snap::getSnapToken($midtransParams);
                 $order->update(['snap_token' => $snapToken]);
-                return view('payment', compact('order', 'snapToken'));
+                
+                // Send instant notification after checkout (DISABLED)
+                // $this->sendInstantNotification($order);
+                
+                // Redirect to custom payment method selection page
+                return redirect()->route('payment.select', $order);
 
             } catch (\Exception $e) {
                 return redirect()->back()->with('error', $e->getMessage());
@@ -577,6 +586,18 @@ class CartController extends Controller
                 // Jika SUKSES
                 if ($status->transaction_status == 'settlement' || $status->transaction_status == 'capture') {
                     $order->update(['status' => 'success']);
+                    
+                    // Send payment success email
+                    try {
+                        if ($order->email) {
+                            Mail::to($order->email)->send(new \App\Mail\PaymentSuccessMail($order));
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send payment success email', [
+                            'order_number' => $order->order_number,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
                 } 
                 // Jika GAGAL / EXPIRE / CANCEL -> Balikin Stok!
                 else if (in_array($status->transaction_status, ['expire', 'cancel', 'deny', 'failure'])) {
@@ -615,5 +636,159 @@ class CartController extends Controller
                       ->firstOrFail();
 
         return view('history-detail', compact('order'));
+    }
+
+    /**
+     * Send instant notification after checkout
+     */
+    protected function sendInstantNotification($order)
+    {
+        try {
+            // Load order relationships
+            $order->load(['user', 'items']);
+
+            // Send WhatsApp notification (DISABLED - too spammy)
+            // $whatsappService = new WhatsAppService();
+            // $whatsappService->sendPaymentReminder($order);
+
+            // Send Email notification to checkout email
+            if ($order->email) {
+                Mail::to($order->email)->send(new PaymentReminderMail($order));
+            }
+
+            Log::info('Instant notification sent after checkout', [
+                'order_number' => $order->order_number,
+                'customer_phone' => $order->customer_phone,
+                'user_email' => $order->user->email ?? null
+            ]);
+
+        } catch (\Exception $e) {
+            // Log error but don't block checkout process
+            Log::error('Failed to send instant notification', [
+                'order_number' => $order->order_number,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Show payment method selection page
+     */
+    public function selectPaymentMethod(Order $order)
+    {
+        // Only allow if order is pending
+        if ($order->status !== 'pending') {
+            return redirect()->route('history.detail', $order)
+                ->with('info', 'Order sudah diproses.');
+        }
+
+        return view('payment-method', compact('order'));
+    }
+
+    /**
+     * Cancel payment and return items to cart
+     */
+    public function cancelPayment(Order $order)
+    {
+        // Only allow if order is pending
+        if ($order->status !== 'pending') {
+            return redirect()->route('history.detail', $order)
+                ->with('info', 'Order sudah diproses.');
+        }
+
+        // Get cart from session
+        $cart = session()->get('cart', []);
+
+        // Return items to cart
+        foreach ($order->items as $item) {
+            $product = Product::find($item->product_id);
+            if ($product) {
+                // Add back to cart
+                $cart[$product->id] = [
+                    'name' => $product->name,
+                    'price' => $item->price,
+                    'quantity' => $item->quantity,
+                    'image' => $product->image,
+                ];
+
+                // Restore stock
+                $product->increment('stock', $item->quantity);
+            }
+        }
+
+        // Save cart back to session
+        session()->put('cart', $cart);
+
+        // Delete order and items
+        $order->items()->delete();
+        $order->delete();
+
+        return redirect()->route('cart.index')
+            ->with('success', 'Pembayaran dibatalkan. Produk dikembalikan ke keranjang.');
+    }
+
+    /**
+     * Process selected payment method
+     */
+    public function processPaymentMethod(Request $request, Order $order)
+    {
+        $request->validate([
+            'payment_method' => 'required|string',
+        ]);
+
+        $paymentMethod = $request->payment_method;
+        $midtransService = new \App\Services\MidtransService();
+        
+        $result = null;
+
+        // Process based on payment method
+        if ($paymentMethod == 'gopay') {
+            $result = $midtransService->chargeGoPay($order);
+        } elseif ($paymentMethod == 'qris') {
+            $result = $midtransService->chargeQRIS($order);
+        } elseif (in_array($paymentMethod, ['bca', 'bni', 'bri', 'mandiri', 'permata'])) {
+            $result = $midtransService->chargeVirtualAccount($order, $paymentMethod);
+        } elseif (in_array($paymentMethod, ['indomaret', 'alfamart'])) {
+            $result = $midtransService->chargeConvenienceStore($order, $paymentMethod);
+        } else {
+            return redirect()->back()->with('error', 'Metode pembayaran tidak valid.');
+        }
+
+        // Check if payment charge was successful
+        if (!$result || !$result['success']) {
+            return redirect()->back()->with('error', $result['message'] ?? 'Gagal memproses pembayaran.');
+        }
+
+        // Update order with payment info
+        $order->update([
+            'payment_type' => $result['payment_type'],
+            'payment_info' => $result,
+        ]);
+
+        // Show payment result page
+        return view('payment-result', [
+            'order' => $order,
+            'paymentInfo' => $result,
+        ]);
+    }
+
+    /**
+     * Simulate payment success for testing (development only)
+     */
+    public function simulatePayment(Order $order)
+    {
+        // Only allow in development
+        if (config('app.env') !== 'local') {
+            abort(403, 'This feature is only available in development');
+        }
+
+        // Update order status to success
+        $order->update([
+            'status' => 'success',
+            'payment_type' => 'simulation',
+        ]);
+
+        return redirect()->route('history.detail', $order->id)
+            ->with('success', 'Payment simulated successfully! Order status updated to SUCCESS.');
     }
 }

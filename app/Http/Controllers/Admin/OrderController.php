@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\WhatsAppService;
+use App\Mail\PaymentReminderMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -40,5 +44,47 @@ class OrderController extends Controller
         $adminFee = $subtotalAfterPromo * 0.01;
         
         return view('admin.orders.show', compact('order', 'subtotal', 'adminFee'));
+    }
+
+    /**
+     * Send manual payment reminder
+     */
+    public function sendReminder(Order $order)
+    {
+        try {
+            // Load relationships
+            $order->load(['user', 'items']);
+
+            // Send WhatsApp notification
+            $whatsappService = new WhatsAppService();
+            $whatsappSent = $whatsappService->sendPaymentReminder($order);
+
+            // Send Email notification
+            $emailSent = false;
+            if ($order->email) {
+                Mail::to($order->email)->send(new PaymentReminderMail($order));
+                $emailSent = true;
+            }
+
+            // Update reminder tracking
+            $order->update([
+                'last_reminder_sent_at' => now(),
+                'reminder_count' => $order->reminder_count + 1
+            ]);
+
+            $message = 'Reminder berhasil dikirim! ';
+            if ($whatsappSent) $message .= 'WhatsApp ✓ ';
+            if ($emailSent) $message .= 'Email ✓';
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send manual reminder', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Gagal mengirim reminder: ' . $e->getMessage());
+        }
     }
 }

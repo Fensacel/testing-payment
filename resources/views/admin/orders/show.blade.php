@@ -7,10 +7,21 @@
 @section('content')
 <div class="space-y-6">
     
-    <!-- Back Button -->
-    <a href="{{ route('admin.orders.index') }}" class="inline-flex items-center text-gray-600 hover:text-black transition">
-        <i class="fas fa-arrow-left mr-2"></i> Back to Orders
-    </a>
+    <!-- Back Button & Actions -->
+    <div class="flex justify-between items-center">
+        <a href="{{ route('admin.orders.index') }}" class="inline-flex items-center text-gray-600 hover:text-black transition">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Orders
+        </a>
+        
+        @if($order->status === 'pending')
+        <form action="{{ route('admin.orders.sendReminder', $order) }}" method="POST" class="inline">
+            @csrf
+            <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition shadow-sm">
+                <i class="fas fa-paper-plane mr-2"></i> Kirim Reminder
+            </button>
+        </form>
+        @endif
+    </div>
     
     <!-- Order Information Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

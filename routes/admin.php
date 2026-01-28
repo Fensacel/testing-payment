@@ -14,6 +14,7 @@ Route::middleware(['web', 'auth', AdminMiddleware::class])->prefix('admin')->nam
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/send-reminder', [OrderController::class, 'sendReminder'])->name('orders.sendReminder');
     
     // Products
     Route::resource('products', ProductController::class);
