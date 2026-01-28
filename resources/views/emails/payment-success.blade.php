@@ -186,12 +186,46 @@
             </tbody>
         </table>
 
-        @if($order->promo_discount > 0)
-        <div class="info-row">
-            <span class="label">Diskon Promo</span>
-            <span class="value" style="color: #10b981;">- Rp {{ number_format($order->promo_discount, 0, ',', '.') }}</span>
+        <!-- Price Breakdown -->
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e0e0e0;">
+            <h3 style="margin: 0 0 15px 0; font-size: 14px; color: #666; text-transform: uppercase;">Rincian Pembayaran</h3>
+            
+            @php
+                $subtotal = 0;
+                foreach($order->items as $item) {
+                    $subtotal += $item->price * $item->quantity;
+                }
+            @endphp
+            
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                <span style="color: #666;">Subtotal Produk</span>
+                <span style="font-weight: 500;">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+            </div>
+            
+            @if($order->promo_discount > 0)
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                <span style="color: #10b981;">Diskon Promo 
+                    @if($order->promoCode)
+                        <span style="font-size: 12px; background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; margin-left: 5px;">{{ $order->promoCode->code }}</span>
+                    @endif
+                </span>
+                <span style="color: #10b981; font-weight: 500;">- Rp {{ number_format($order->promo_discount, 0, ',', '.') }}</span>
+            </div>
+            @endif
+            
+            @php
+                // Calculate payment fee if exists (Midtrans might add fees)
+                $expectedTotal = $subtotal - $order->promo_discount;
+                $paymentFee = $order->total_price - $expectedTotal;
+            @endphp
+            
+            @if($paymentFee > 0)
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                <span style="color: #666;">Biaya Admin/Payment</span>
+                <span style="font-weight: 500;">Rp {{ number_format($paymentFee, 0, ',', '.') }}</span>
+            </div>
+            @endif
         </div>
-        @endif
 
         <div class="total-row">
             <div style="display: flex; justify-content: space-between; align-items: center;">

@@ -7,32 +7,26 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
-    protected $apiUrl;
-    protected $apiKey;
-    protected $phone;
-    protected $groqApiKey;
-    protected $useGroq;
+    protected $wahaUrl;
+    protected $wahaSession;
+    protected $wahaApiKey;
 
     public function __construct()
     {
-        // TextMeBot - Free WhatsApp API
-        // Setup: https://textmebot.com
-        $this->apiUrl = 'https://api.textmebot.com/send.php';
-        $this->apiKey = env('WHATSAPP_API_KEY');
-        $this->phone = env('WHATSAPP_PHONE');
-        
-        // Groq AI for message generation
-        $this->groqApiKey = env('GROQ_API_KEY');
-        $this->useGroq = env('USE_GROQ_FOR_MESSAGES', false);
+        // WAHA (WhatsApp HTTP API)
+        // Setup: https://waha.devlike.pro/
+        $this->wahaUrl = env('WAHA_URL', 'http://localhost:3000');
+        $this->wahaSession = env('WAHA_SESSION', 'default');
+        $this->wahaApiKey = env('WAHA_API_KEY', ''); // Optional API key
     }
 
     /**
-     * Send WhatsApp message using TextMeBot
+     * Send WhatsApp message using WAHA
      */
     public function sendMessage($phone, $message)
     {
-        if (!$this->apiKey || !$this->phone) {
-            Log::error('WhatsApp API not configured. Please set WHATSAPP_API_KEY and WHATSAPP_PHONE in .env');
+        if (!$this->wahaUrl) {
+            Log::error('WAHA API not configured. Please set WAHA_URL in .env');
             return false;
         }
 
@@ -44,22 +38,31 @@ class WhatsAppService
             $phone = '62' . substr($phone, 1);
         }
 
+        // Add @c.us suffix for WhatsApp ID
+        $chatId = $phone . '@c.us';
+
         try {
-            $response = Http::asForm()->post($this->apiUrl, [
-                'recipient' => $phone,
-                'apikey' => $this->apiKey,
+            // Prepare headers
+            $headers = ['Content-Type' => 'application/json'];
+            if ($this->wahaApiKey) {
+                $headers['X-Api-Key'] = $this->wahaApiKey;
+            }
+
+            $response = Http::withHeaders($headers)->post("{$this->wahaUrl}/api/sendText", [
+                'session' => $this->wahaSession,
+                'chatId' => $chatId,
                 'text' => $message,
             ]);
 
             if ($response->successful()) {
-                Log::info('WhatsApp sent successfully via TextMeBot', [
+                Log::info('WhatsApp sent successfully via WAHA', [
                     'to' => $phone,
-                    'response' => $response->body()
+                    'response' => $response->json()
                 ]);
                 return true;
             }
 
-            Log::error('WhatsApp send failed', [
+            Log::error('WhatsApp send failed via WAHA', [
                 'to' => $phone,
                 'status' => $response->status(),
                 'response' => $response->body()
@@ -67,7 +70,57 @@ class WhatsAppService
             return false;
 
         } catch (\Exception $e) {
-            Log::error('WhatsApp send exception', [
+            Log::error('WhatsApp send exception via WAHA', [
+                'to' => $phone,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send WhatsApp message with image using WAHA
+     */
+    public function sendImage($phone, $imageUrl, $caption = '')
+    {
+        if (!$this->wahaUrl) {
+            Log::error('WAHA API not configured');
+            return false;
+        }
+
+        // Clean phone number
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (substr($phone, 0, 1) === '0') {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        $chatId = $phone . '@c.us';
+
+        try {
+            $response = Http::post("{$this->wahaUrl}/api/sendImage", [
+                'session' => $this->wahaSession,
+                'chatId' => $chatId,
+                'file' => [
+                    'url' => $imageUrl,
+                ],
+                'caption' => $caption,
+            ]);
+
+            if ($response->successful()) {
+                Log::info('WhatsApp image sent successfully via WAHA', [
+                    'to' => $phone,
+                ]);
+                return true;
+            }
+
+            Log::error('WhatsApp image send failed', [
+                'to' => $phone,
+                'status' => $response->status(),
+            ]);
+            return false;
+
+        } catch (\Exception $e) {
+            Log::error('WhatsApp image send exception', [
                 'to' => $phone,
                 'error' => $e->getMessage()
             ]);
@@ -85,166 +138,135 @@ class WhatsAppService
     }
 
     /**
-     * Build payment reminder message using Groq AI or template
+     * Send payment success notification
+     */
+    public function sendPaymentSuccess($order)
+    {
+        $message = $this->buildPaymentSuccessMessage($order);
+        return $this->sendMessage($order->customer_phone, $message);
+    }
+
+    /**
+     * Build payment reminder message
      */
     protected function buildPaymentReminderMessage($order)
-    {
-        // Try to use Groq AI if enabled and configured
-        if ($this->useGroq && $this->groqApiKey) {
-            try {
-                return $this->generateMessageWithGroq($order);
-            } catch (\Exception $e) {
-                Log::warning('Groq AI failed, falling back to template', [
-                    'error' => $e->getMessage()
-                ]);
-                // Fall back to template if Groq fails
-            }
-        }
-
-        // Default template-based message
-        return $this->buildTemplateMessage($order);
-    }
-
-    /**
-     * Generate personalized message using Groq AI
-     */
-    protected function generateMessageWithGroq($order)
-    {
-        $paymentUrl = route('history.detail', $order->id);
-        
-        // Prepare order data for AI
-        $orderData = [
-            'customer_name' => $order->customer_name,
-            'order_number' => $order->order_number,
-            'total_price' => 'Rp ' . number_format($order->total_price, 0, ',', '.'),
-            'created_at' => $order->created_at->format('d M Y, H:i'),
-            'customer_phone' => $order->customer_phone,
-            'payment_url' => $paymentUrl,
-        ];
-
-        if ($order->payment_type && $order->payment_info) {
-            if (isset($order->payment_info['bank'])) {
-                $orderData['payment_method'] = 'Bank Transfer ' . $order->payment_info['bank'];
-                $orderData['payment_detail'] = 'VA: ' . $order->payment_info['va_number'];
-            } elseif (isset($order->payment_info['store'])) {
-                $orderData['payment_method'] = $order->payment_info['store'];
-                $orderData['payment_detail'] = 'Kode: ' . $order->payment_info['payment_code'];
-            } elseif (isset($order->payment_info['bill_key'])) {
-                $orderData['payment_method'] = 'Mandiri Bill';
-                $orderData['payment_detail'] = 'Bill Key: ' . $order->payment_info['bill_key'];
-            }
-        }
-
-        $prompt = "Generate a professional yet engaging WhatsApp payment reminder message in Indonesian for an e-commerce order. 
-
-Order details:
-" . json_encode($orderData, JSON_PRETTY_PRINT) . "
-
-IMPORTANT: Follow this EXACT format structure:
-
-🔔 Pengingat Pembayaran
-
-Yth. Bapak/Ibu [Customer Name],
-
-Kami ingin mengingatkan bahwa pesanan Anda masih menunggu pembayaran:
-
-📦 No. Order: [Order Number]
-💰 Total: [Total Amount]
-📅 Tanggal: [Date]
-
-[If payment method exists:]
-💳 Metode Pembayaran:
-[Payment Method]
-[Payment Details]
-
-Mohon segera selesaikan pembayaran Anda agar pesanan dapat kami proses.
-
-Detail lengkap: [Payment URL]
-
-Terima kasih atas kepercayaan Anda! 🙏
-_" . env('APP_NAME', 'Toko Online') . "_
-
-Requirements:
-- Use EXACTLY the format above
-- Replace [placeholders] with actual data
-- Keep it clean and well-structured
-- Use emojis as shown in template
-- Keep lines short and readable
-- Professional but friendly tone
-- Maximum 15 lines total
-
-Generate only the message text following the template above.";
-
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->groqApiKey,
-            'Content-Type' => 'application/json',
-        ])->post('https://api.groq.com/openai/v1/chat/completions', [
-            'model' => 'llama-3.3-70b-versatile',
-            'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => 'You are a helpful assistant that generates professional WhatsApp messages for e-commerce payment reminders in Indonesian.'
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt
-                ]
-            ],
-            'temperature' => 0.7,
-            'max_tokens' => 500,
-        ]);
-
-        if ($response->successful()) {
-            $data = $response->json();
-            $message = $data['choices'][0]['message']['content'] ?? null;
-            
-            if ($message) {
-                Log::info('Groq AI generated message successfully');
-                return trim($message);
-            }
-        }
-
-        throw new \Exception('Groq API failed: ' . $response->body());
-    }
-
-    /**
-     * Build template-based message (fallback)
-     */
-    protected function buildTemplateMessage($order)
     {
         $appName = env('APP_NAME', 'Toko Online');
         $paymentUrl = route('history.detail', $order->id);
         
-        $message = "*REMINDER PEMBAYARAN*\n\n";
+        $message = "🔔 *REMINDER PEMBAYARAN*\n\n";
         $message .= "Halo *{$order->customer_name}*,\n\n";
         $message .= "Pesanan Anda menunggu pembayaran:\n\n";
-        $message .= "Order: {$order->order_number}\n";
-        $message .= "Total: Rp " . number_format($order->total_price, 0, ',', '.') . "\n";
-        $message .= "Tanggal: " . $order->created_at->format('d M Y, H:i') . "\n";
-        $message .= "Customer: {$order->customer_name}\n";
-        $message .= "Phone: {$order->customer_phone}\n\n";
+        $message .= "📦 Order: `{$order->order_number}`\n";
+        $message .= "💰 Total: *Rp " . number_format($order->total_price, 0, ',', '.') . "*\n";
+        $message .= "📅 Tanggal: " . $order->created_at->format('d M Y, H:i') . "\n\n";
         
         if ($order->payment_type && $order->payment_info) {
-            $message .= "*Info Pembayaran:*\n";
+            $message .= "💳 *Info Pembayaran:*\n";
             
             if (isset($order->payment_info['bank'])) {
                 $message .= "Bank: {$order->payment_info['bank']}\n";
-                $message .= "VA: {$order->payment_info['va_number']}\n";
+                $message .= "VA: `{$order->payment_info['va_number']}`\n";
             } elseif (isset($order->payment_info['store'])) {
                 $message .= "{$order->payment_info['store']}\n";
-                $message .= "Kode: {$order->payment_info['payment_code']}\n";
+                $message .= "Kode: `{$order->payment_info['payment_code']}`\n";
             } elseif (isset($order->payment_info['bill_key'])) {
                 $message .= "Mandiri Bill\n";
-                $message .= "Bill Key: {$order->payment_info['bill_key']}\n";
-                $message .= "Biller: {$order->payment_info['biller_code']}\n";
+                $message .= "Bill Key: `{$order->payment_info['bill_key']}`\n";
+                $message .= "Biller: `{$order->payment_info['biller_code']}`\n";
             }
             $message .= "\n";
         }
         
         $message .= "Silakan selesaikan pembayaran segera.\n";
         $message .= "Detail: {$paymentUrl}\n\n";
+        $message .= "Terima kasih! 🙏\n";
         $message .= "_{$appName}_";
         
         return $message;
+    }
+
+    /**
+     * Build payment success message
+     */
+    protected function buildPaymentSuccessMessage($order)
+    {
+        $appName = env('APP_NAME', 'Toko Online');
+        $orderUrl = route('history.detail', $order->id);
+        
+        $message = "✅ *PEMBAYARAN BERHASIL*\n\n";
+        $message .= "Halo *{$order->customer_name}*,\n\n";
+        $message .= "Terima kasih! Pembayaran Anda telah kami terima.\n\n";
+        $message .= "📦 Order: `{$order->order_number}`\n";
+        $message .= "💰 Total: *Rp " . number_format($order->total_price, 0, ',', '.') . "*\n";
+        $message .= "✅ Status: *LUNAS*\n\n";
+        
+        $message .= "📦 *Langkah Selanjutnya:*\n";
+        $message .= "Produk digital Anda akan segera diproses.\n";
+        $message .= "Silakan cek email untuk detail lebih lanjut.\n\n";
+        
+        $message .= "Detail pesanan: {$orderUrl}\n\n";
+        $message .= "Terima kasih atas kepercayaan Anda! 🙏\n";
+        $message .= "_{$appName}_";
+        
+        return $message;
+    }
+
+    /**
+     * Check WAHA session status
+     */
+    public function checkStatus()
+    {
+        try {
+            $response = Http::get("{$this->wahaUrl}/api/sessions/{$this->wahaSession}");
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                return [
+                    'success' => true,
+                    'status' => $data['status'] ?? 'unknown',
+                    'data' => $data,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Failed to get session status',
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Get QR code for session (if not authenticated)
+     */
+    public function getQRCode()
+    {
+        try {
+            $response = Http::get("{$this->wahaUrl}/api/sessions/{$this->wahaSession}/qr");
+            
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'qr' => $response->body(),
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Failed to get QR code',
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 }

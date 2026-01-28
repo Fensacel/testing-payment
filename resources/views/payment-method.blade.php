@@ -162,10 +162,6 @@
                                 </label>
                             </div>
                         </div>
-
-                        <button type="submit" id="submitBtn" disabled class="w-full bg-gray-300 text-white py-4 rounded-xl font-bold text-sm uppercase tracking-widest cursor-not-allowed">
-                            Pilih Metode Pembayaran
-                        </button>
                     </form>
                 </div>
 
@@ -200,6 +196,10 @@
                                 <p class="text-gray-900">Rp {{ number_format($order->total_price, 0, ',', '.') }}</p>
                             </div>
                         </div>
+                        
+                        <button type="submit" form="paymentForm" id="submitBtn" disabled class="w-full bg-gray-300 text-white py-4 rounded-xl font-bold text-sm uppercase tracking-widest cursor-not-allowed mt-6">
+                            Pilih Metode Pembayaran
+                        </button>
                     </div>
                 </div>
             </div>
