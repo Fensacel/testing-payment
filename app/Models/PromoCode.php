@@ -17,8 +17,7 @@ class PromoCode extends Model
     ];
 
     protected $casts = [
-        'valid_from' => 'datetime',
-        'valid_until' => 'datetime',
+        'expires_at' => 'datetime',
         'is_active' => 'boolean',
     ];
 

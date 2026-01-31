@@ -213,12 +213,111 @@ class WhatsAppService
     }
 
     /**
+     * Start WAHA session
+     */
+    public function startSession()
+    {
+        try {
+            // Prepare headers
+            $headers = ['Content-Type' => 'application/json'];
+            if ($this->wahaApiKey) {
+                $headers['X-Api-Key'] = $this->wahaApiKey;
+            }
+
+            // 1. Try to start existing session
+            $response = Http::withHeaders($headers)->post("{$this->wahaUrl}/api/sessions/start", [
+                'name' => $this->wahaSession,
+            ]);
+
+            if ($response->successful()) {
+                return ['success' => true, 'data' => $response->json()];
+            }
+
+            // 2. If start failed (maybe session doesn't exist), try to create it
+            // WAHA returns 404 or specific error if session not found
+            if ($response->status() === 404 || str_contains($response->body(), 'not found')) {
+                $createResponse = Http::withHeaders($headers)->post("{$this->wahaUrl}/api/sessions", [
+                    'name' => $this->wahaSession,
+                    'config' => [
+                        'proxy' => null,
+                        'webhooks' => [],
+                    ]
+                ]);
+
+                if ($createResponse->successful()) {
+                    return ['success' => true, 'data' => $createResponse->json()];
+                }
+                return ['success' => false, 'error' => 'Failed to create session: ' . $createResponse->body()];
+            }
+
+            return ['success' => false, 'error' => $response->body()];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Stop WAHA session
+     */
+    public function stopSession()
+    {
+        try {
+            $headers = ['Content-Type' => 'application/json'];
+            if ($this->wahaApiKey) {
+                $headers['X-Api-Key'] = $this->wahaApiKey;
+            }
+
+            $response = Http::withHeaders($headers)->post("{$this->wahaUrl}/api/sessions/stop", [
+                'name' => $this->wahaSession,
+            ]);
+
+            if ($response->successful()) {
+                return ['success' => true, 'data' => $response->json()];
+            }
+
+            return ['success' => false, 'error' => $response->body()];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Logout WAHA session
+     */
+    public function logoutSession()
+    {
+        try {
+            $headers = ['Content-Type' => 'application/json'];
+            if ($this->wahaApiKey) {
+                $headers['X-Api-Key'] = $this->wahaApiKey;
+            }
+
+            $response = Http::withHeaders($headers)->post("{$this->wahaUrl}/api/sessions/logout", [
+                'name' => $this->wahaSession,
+            ]);
+
+            if ($response->successful()) {
+                return ['success' => true, 'data' => $response->json()];
+            }
+
+            return ['success' => false, 'error' => $response->body()];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Check WAHA session status
      */
     public function checkStatus()
     {
         try {
-            $response = Http::get("{$this->wahaUrl}/api/sessions/{$this->wahaSession}");
+            $headers = [];
+            if ($this->wahaApiKey) {
+                $headers['X-Api-Key'] = $this->wahaApiKey;
+            }
+
+            $response = Http::withHeaders($headers)->get("{$this->wahaUrl}/api/sessions/{$this->wahaSession}");
             
             if ($response->successful()) {
                 $data = $response->json();
@@ -229,9 +328,18 @@ class WhatsAppService
                 ];
             }
 
+            // Treat 404 (Session not found) as STOPPED so we can show Start button
+            if ($response->status() === 404) {
+                return [
+                    'success' => true, // Request successful, just no session
+                    'status' => 'STOPPED',
+                    'data' => [],
+                ];
+            }
+
             return [
                 'success' => false,
-                'error' => 'Failed to get session status',
+                'error' => 'Failed to get session status: ' . $response->status(),
             ];
 
         } catch (\Exception $e) {
@@ -248,18 +356,25 @@ class WhatsAppService
     public function getQRCode()
     {
         try {
-            $response = Http::get("{$this->wahaUrl}/api/sessions/{$this->wahaSession}/qr");
+            $headers = [];
+            if ($this->wahaApiKey) {
+                $headers['X-Api-Key'] = $this->wahaApiKey;
+            }
+
+            // Correct URL: /api/{session}/auth/qr
+            $response = Http::withHeaders($headers)->get("{$this->wahaUrl}/api/{$this->wahaSession}/auth/qr");
             
             if ($response->successful()) {
                 return [
                     'success' => true,
                     'qr' => $response->body(),
+                    'content_type' => $response->header('Content-Type'),
                 ];
             }
 
             return [
                 'success' => false,
-                'error' => 'Failed to get QR code',
+                'error' => 'Failed to get QR code: ' . $response->status(),
             ];
 
         } catch (\Exception $e) {
