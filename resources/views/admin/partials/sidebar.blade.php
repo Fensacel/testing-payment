@@ -32,6 +32,11 @@
             <i class="fas fa-ticket-alt w-5"></i>
             <span>Promo Codes</span>
         </a>
+
+        <a href="{{ route('admin.whatsapp') }}" class="flex items-center gap-3 px-6 py-3 {{ request()->routeIs('admin.whatsapp*') ? 'bg-gray-800 border-l-4 border-white font-semibold' : 'hover:bg-gray-800' }} transition">
+            <i class="fab fa-whatsapp w-5"></i>
+            <span>WhatsApp</span>
+        </a>
     </nav>
     
     <div class="absolute bottom-0 w-64 p-6 border-t border-gray-800">

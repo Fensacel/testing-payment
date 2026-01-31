@@ -144,6 +144,37 @@
                         <td>Rp {{ number_format($item->price * $item->quantity, 0, ',', '.') }}</td>
                     </tr>
                     @endforeach
+                    @php
+                        $subtotal = 0;
+                        foreach($order->items as $item) {
+                            $subtotal += $item->price * $item->quantity;
+                        }
+                    @endphp
+                    <tr>
+                        <td colspan="2" style="text-align: right; padding-top: 15px; border-top: 2px solid #dee2e6;">Subtotal</td>
+                        <td style="padding-top: 15px; border-top: 2px solid #dee2e6;">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
+                    </tr>
+                    @if($order->promo_discount > 0)
+                    <tr style="color: #10b981;">
+                        <td colspan="2" style="text-align: right;">
+                            Diskon Promo
+                            @if($order->promoCode)
+                                <span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 3px; margin-left: 5px;">{{ $order->promoCode->code }}</span>
+                            @endif
+                        </td>
+                        <td>- Rp {{ number_format($order->promo_discount, 0, ',', '.') }}</td>
+                    </tr>
+                    @endif
+                    @php
+                        $expectedTotal = $subtotal - $order->promo_discount;
+                        $paymentFee = $order->total_price - $expectedTotal;
+                    @endphp
+                    @if($paymentFee > 0)
+                    <tr>
+                        <td colspan="2" style="text-align: right;">Biaya Admin/Payment</td>
+                        <td>Rp {{ number_format($paymentFee, 0, ',', '.') }}</td>
+                    </tr>
+                    @endif
                     <tr class="total-row">
                         <td colspan="2">Total</td>
                         <td>Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>

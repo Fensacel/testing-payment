@@ -27,4 +27,12 @@ Route::middleware(['web', 'auth', AdminMiddleware::class])->prefix('admin')->nam
     // Promo Codes
     Route::resource('promo-codes', PromoCodeController::class);
     Route::post('/promo-codes/{promo_code}/toggle', [\App\Http\Controllers\Admin\PromoCodeToggleController::class, 'toggle'])->name('promo-codes.toggle');
+
+    // WhatsApp Management
+    Route::get('/whatsapp', [\App\Http\Controllers\Admin\WhatsAppController::class, 'index'])->name('whatsapp');
+    Route::post('/whatsapp/start', [\App\Http\Controllers\Admin\WhatsAppController::class, 'start'])->name('whatsapp.start');
+    Route::post('/whatsapp/stop', [\App\Http\Controllers\Admin\WhatsAppController::class, 'stop'])->name('whatsapp.stop');
+    Route::post('/whatsapp/logout', [\App\Http\Controllers\Admin\WhatsAppController::class, 'logout'])->name('whatsapp.logout');
+    Route::get('/whatsapp/qr', [\App\Http\Controllers\Admin\WhatsAppController::class, 'qr'])->name('whatsapp.qr');
+    Route::get('/whatsapp/status', [\App\Http\Controllers\Admin\WhatsAppController::class, 'status'])->name('whatsapp.status');
 });
