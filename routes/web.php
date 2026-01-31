@@ -15,13 +15,15 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/product/{slug}', [HomeController::class, 'show'])->name('product.detail');
 
 // Halaman Keranjang & Kelola Keranjang
-Route::get('cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('cart/add/{id}', [CartController::class, 'addToCart'])->name('cart.add');
-Route::delete('cart/remove', [CartController::class, 'remove'])->name('cart.remove');
-Route::post('cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
-Route::post('cart/update-package', [CartController::class, 'updatePackage'])->name('cart.updatePackage');
-Route::post('cart/apply-promo', [CartController::class, 'applyPromo'])->name('cart.applyPromo');
-Route::post('cart/remove-promo', [CartController::class, 'removePromo'])->name('cart.removePromo');
+Route::controller(CartController::class)->prefix('cart')->name('cart.')->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::post('/add/{id}', 'addToCart')->name('add');
+    Route::delete('/remove', 'remove')->name('remove');
+    Route::post('/update-quantity', 'updateQuantity')->name('updateQuantity');
+    Route::post('/update-package', 'updatePackage')->name('updatePackage');
+    Route::post('/apply-promo', 'applyPromo')->name('applyPromo');
+    Route::post('/remove-promo', 'removePromo')->name('removePromo');
+});
 
 // Route Penyelamat (Redirect jika user akses /checkout via GET)
 Route::get('checkout', function() {
@@ -29,9 +31,11 @@ Route::get('checkout', function() {
 });
 
 // --- OAuth Social Login ---
-Route::get('/oauth/{provider}', [SocialAuthController::class, 'redirect'])->name('oauth.redirect');
-Route::get('/oauth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('oauth.callback');
-Route::get('/oauth/{provider}/debug', [SocialAuthController::class, 'debug'])->name('oauth.debug');
+Route::controller(SocialAuthController::class)->prefix('oauth')->name('oauth.')->group(function () {
+    Route::get('/{provider}', 'redirect')->name('redirect');
+    Route::get('/{provider}/callback', 'callback')->name('callback');
+    Route::get('/{provider}/debug', 'debug')->name('debug');
+});
 
 
 // --- 2. HALAMAN DASHBOARD USER (Bawaan Breeze) ---
@@ -43,25 +47,29 @@ Route::get('/dashboard', function () {
 // --- 3. HALAMAN KHUSUS MEMBER (Wajib Login) ---
 Route::middleware('auth')->group(function () {
     
-    // Fitur Toko yang butuh Login (Checkout, Payment, History)
-    Route::post('checkout', [CartController::class, 'viewCheckout'])->name('cart.checkout');
-    Route::post('payment', [CartController::class, 'processPayment'])->name('cart.payment');
-    
-    // Custom payment method selection
-    Route::get('payment-method/{order}', [CartController::class, 'selectPaymentMethod'])->name('payment.select');
-    Route::post('payment-method/{order}', [CartController::class, 'processPaymentMethod'])->name('payment.process');
-    Route::get('payment-cancel/{order}', [CartController::class, 'cancelPayment'])->name('payment.cancel');
-    
-    Route::get('history', [CartController::class, 'history'])->name('history');
-    Route::get('history/{id}', [CartController::class, 'historyDetail'])->name('history.detail');
+    Route::controller(CartController::class)->group(function () {
+        // Fitur Toko yang butuh Login (Checkout, Payment, History)
+        Route::post('checkout', 'viewCheckout')->name('cart.checkout');
+        Route::post('payment', 'processPayment')->name('cart.payment');
+        
+        // Custom payment method selection
+        Route::get('payment-method/{order}', 'selectPaymentMethod')->name('payment.select');
+        Route::post('payment-method/{order}', 'processPaymentMethod')->name('payment.process');
+        Route::get('payment-cancel/{order}', 'cancelPayment')->name('payment.cancel');
+        
+        Route::get('history', 'history')->name('history');
+        Route::get('history/{id}', 'historyDetail')->name('history.detail');
+        
+        // Payment simulation for testing (development only)
+        Route::get('/simulate-payment/{order}', 'simulatePayment')->name('simulate.payment');
+    });
 
     // Fitur Profile Bawaan Breeze
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    // Payment simulation for testing (development only)
-    Route::get('/simulate-payment/{order}', [CartController::class, 'simulatePayment'])->name('simulate.payment');
+    Route::controller(ProfileController::class)->group(function () {
+        Route::get('/profile', 'edit')->name('profile.edit');
+        Route::patch('/profile', 'update')->name('profile.update');
+        Route::delete('/profile', 'destroy')->name('profile.destroy');
+    });
 });
 
 // Import Route Auth (Login, Register, Logout)

@@ -12,9 +12,11 @@ Route::middleware(['web', 'auth', AdminMiddleware::class])->prefix('admin')->nam
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
     // Orders
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-    Route::post('/orders/{order}/send-reminder', [OrderController::class, 'sendReminder'])->name('orders.sendReminder');
+    Route::controller(OrderController::class)->prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{order}', 'show')->name('show');
+        Route::post('/{order}/send-reminder', 'sendReminder')->name('sendReminder');
+    });
     
     // Products
     Route::resource('products', ProductController::class);

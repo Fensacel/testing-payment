@@ -7,23 +7,25 @@ use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
+    protected $productService;
+
+    public function __construct(\App\Services\ProductService $productService)
+    {
+        $this->productService = $productService;
+    }
+
     /**
      * Menampilkan halaman depan toko.
      */
     public function index()
     {
-        // Logika pengambilan data harus ada DI DALAM fungsi ini
-        $products = Product::where('is_active', true)->get();
-
+        $products = $this->productService->getActiveProducts();
         return view('home', compact('products'));
     }
+
     public function show($slug)
     {
-        // Cari produk berdasarkan slug, jika tidak ketemu tampilkan 404
-        $product = Product::where('slug', $slug)
-            ->where('is_active', true)
-            ->firstOrFail();
-
+        $product = $this->productService->findActiveBySlug($slug);
         return view('show', compact('product'));
     }
 }

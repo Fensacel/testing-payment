@@ -10,6 +10,43 @@ use Illuminate\Support\Str;
 class ProductService
 {
     /**
+     * Get all active products for the homepage.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getActiveProducts()
+    {
+        return Product::where('is_active', true)->get();
+    }
+
+    /**
+     * Find an active product by slug.
+     *
+     * @param string $slug
+     * @return Product
+     */
+    public function findActiveBySlug(string $slug): Product
+    {
+        return Product::where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+    }
+
+    /**
+     * Get paginated products for API.
+     *
+     * @param int $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    public function getApiList(int $perPage = 12)
+    {
+        return Product::query()
+            ->select(['id', 'name', 'slug', 'price', 'stock', 'image'])
+            ->where('is_active', true)
+            ->latest()
+            ->paginate($perPage);
+    }
+    /**
      * Create a new product.
      *
      * @param array $data
